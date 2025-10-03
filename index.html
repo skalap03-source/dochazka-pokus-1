@@ -35,16 +35,10 @@
   <button onclick="odhlasit()">Odhlásit</button>
 </div>
 
-<!-- Skrytý form pro Google Form -->
-<form id="dochazkaForm" action="https://docs.google.com/forms/d/e/1FAIpQLScKG0j6pPMbHkI6LZc1af6WA8dVkYVftbVwtYGXi9tufsk0UA/formResponse" method="POST" target="hidden_iframe" class="hidden">
-  <input type="hidden" name="entry.1086879010" id="f_jmeno">
-  <input type="hidden" name="entry.1840276064" id="f_misto">
-  <input type="hidden" name="entry.658657709" id="f_typ">
-  <input type="hidden" name="entry.335350319" id="f_cas">
-</form>
-<iframe name="hidden_iframe" style="display:none;"></iframe>
-
 <script>
+// URL tvého nasazeného Apps Script Web App
+const scriptURL = "https://script.google.com/macros/s/AKfycbzyKZn6MgysBe00eUpMvEplv3EufBFMgeVjEMx71GU6Lz4--oN3uZZU8hr-L8uqtVIsdg/exec";
+
 function prihlasit() {
   const jmeno = document.getElementById('jmeno').value.trim();
   const misto = document.getElementById('misto').value;
@@ -70,16 +64,16 @@ function zapsat() {
   const typ = "Interval";
   const cas = new Date().toLocaleString('cs-CZ');
 
-  // nastav hodnoty skrytého formuláře
-  document.getElementById('f_jmeno').value = jmeno;
-  document.getElementById('f_misto').value = misto;
-  document.getElementById('f_typ').value = typ;
-  document.getElementById('f_cas').value = cas;
+  const data = { jmeno, misto, typ, cas };
 
-  // odešli formulář
-  document.getElementById('dochazkaForm').submit();
-
-  alert(`Záznam uložen: ${cas}`);
+  fetch(scriptURL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(data)
+  }).then(() => {
+    alert(`Záznam uložen: ${cas}`);
+  }).catch(err => alert("Chyba při zápisu: " + err));
 }
 </script>
 
