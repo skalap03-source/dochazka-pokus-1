@@ -19,19 +19,31 @@
   </label><br><br>
   <label>Místo:<br>
     <select id="misto">
-      <option value="Vypich">Vypich</option>
-      <option value="Pražačka">Pražačka</option>
+      <option value="Brandýs">Brandýs</option>
       <option value="Dejvice">Dejvice</option>
+      <option value="Harfa">Harfa</option> 
+      <option value="Máj">Máj</option>
+      <option value="Nábřeží">Nábřeží</option>
+      <option value="Ořechovka">Ořechovka</option> 
+      <option value="Pražačka">Pražačka</option>
+      <option value="Příbram">Příbram</option>
+      <option value="Sofijské náměstí">Sofijské náměstí</option> 
+      <option value="Uhříněves">Uhříněves</option>
+      <option value="Vypich">Vypich</option>
+      <option value="Vyšehrad">Vyšehrad</option>
+      
     </select>
   </label><br><br>
   <button onclick="prihlasit()">Pokračovat</button>
 </div>
 
-<!-- Docházkový panel -->
+<!-- Kropení / Hrabání -->
 <div id="panel" class="hidden">
   <h2>Docházkový panel</h2>
   <p id="uzivatel"></p>
-  <button onclick="zapsat()">Zapsat čas</button>
+  <button onclick="zapsat()">Kropení</button>
+  <button onclick="zapsat()">Hrabání</button>
+  
   <button onclick="odhlasit()">Odhlásit</button>
 </div>
 
@@ -80,6 +92,7 @@ function zapsat() {
 
 </body>
 </html>
+
 
 
 
