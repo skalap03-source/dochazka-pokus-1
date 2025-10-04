@@ -5,39 +5,28 @@
 <title>Docházkový panel</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;background:#f0f2f5;}
-.modal-wrap{height:100%;display:flex;align-items:center;justify-content:center;}
-.modal{
-  width:400px; max-width:92%;
-  background:#fff;border-radius:12px;padding:26px 22px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.15); position:relative;
-  text-align:center;
-}
-h2{margin:0 0 14px;font-weight:700;font-size:20px}
-label{display:block;text-align:left;margin-bottom:8px;font-weight:700;color:#000}
-input, select{width:100%;padding:10px;margin-bottom:12px;font-size:15px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
-.row{display:flex;gap:12px;justify-content:center;margin:12px 0}
-button{border:none;border-radius:8px;padding:12px 18px;font-weight:700;font-size:16px;cursor:pointer}
-.btn-large{min-width:140px;height:52px}
-.btn-checkin{background:#4CAF50;color:#000}
-.btn-checkout{background:#F44336;color:#000}
-.btn-interval{background:#d9d9d9;color:#000}
-.btn-primary{background:#2b7cff;color:#fff}
-#logoutBtn{
-  position:absolute;
-  right:14px;
-  top:12px;
-  background:transparent;
-  color:#111;
-  font-weight:700;
-  border-radius:6px;
-  padding:6px 8px;
-  display:none;
-  z-index:10;
-}
-#uzivatel{font-weight:700;margin-bottom:10px}
-#panel{display:none}
-@media (max-width:420px){.btn-large{min-width:120px;height:48px;font-size:15px}}
+  html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;background:#f0f2f5;}
+  .modal-wrap{height:100%;display:flex;align-items:center;justify-content:center;}
+  .modal{
+    width:400px; max-width:92%;
+    background:#fff;border-radius:12px;padding:26px 22px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.15); position:relative;
+    text-align:center;
+  }
+  h2{margin:0 0 14px;font-weight:700;font-size:20px}
+  label{display:block;text-align:left;margin-bottom:8px;font-weight:700;color:#000}
+  input, select{width:100%;padding:10px;margin-bottom:12px;font-size:15px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
+  .row{display:flex;gap:12px;justify-content:center;margin:12px 0}
+  button{border:none;border-radius:8px;padding:12px 18px;font-weight:700;font-size:16px;cursor:pointer}
+  .btn-large{min-width:140px;height:52px}
+  .btn-checkin{background:#4CAF50;color:#000}
+  .btn-checkout{background:#F44336;color:#000}
+  .btn-interval{background:#d9d9d9;color:#000}
+  .btn-primary{background:#2b7cff;color:#fff}
+  #logoutBtn{position:absolute;right:14px;top:12px;background:transparent;color:#111;font-weight:700;border-radius:6px;padding:6px 8px;display:none}
+  #uzivatel{font-weight:700;margin-bottom:10px}
+  #panel{display:none}
+  @media (max-width:420px){.btn-large{min-width:120px;height:48px;font-size:15px}}
 </style>
 </head>
 <body>
@@ -78,13 +67,13 @@ button{border:none;border-radius:8px;padding:12px 18px;font-weight:700;font-size
       <div id="uzivatel"></div>
 
       <div class="row">
-        <button id="btnPrichod" class="btn-checkin btn-large" onclick="zapsatDochazku('Příchod')">Příchod</button>
-        <button id="btnOdchod" class="btn-checkout btn-large" onclick="zapsatDochazku('Odchod')">Odchod</button>
+        <button class="btn-checkin btn-large" onclick="zapsatDochazku('Příchod')">Příchod</button>
+        <button class="btn-checkout btn-large" onclick="zapsatDochazku('Odchod')">Odchod</button>
       </div>
 
       <div class="row">
         <button class="btn-interval btn-large" onclick="zapsatInterval('Kropení')">Kropení</button>
-        <button class="btn-interval btn-large" onclick="zapsatInterval('Hrabaní')">Hrabání</button>
+        <button class="btn-interval btn-large" onclick="zapsatInterval('Hrabani')">Hrabaní</button>
       </div>
     </div>
 
@@ -94,33 +83,35 @@ button{border:none;border-radius:8px;padding:12px 18px;font-weight:700;font-size
 <script>
 const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
 
-// normalizace jména
+// Normalizace jména: odstranění diakritiky, malá písmena, bezpečné znaky
 function makeSafeName(raw){
   if(!raw) return "neznamy";
-  let s = raw.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  let s = raw.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,""); // remove diacritics
   s = s.toLowerCase().replace(/[^a-z0-9\s\-_]/g," ");
   s = s.replace(/\s+/g," ").trim();
   return s||"neznamy";
 }
 
-// přihlášení
+// Přihlášení
 function prihlasit(){
   const raw = document.getElementById('jmenoInput').value || "";
   if(!raw.trim()){ alert("Zadej jméno a příjmení"); return; }
   const misto = document.getElementById('mistoSelect').value || "";
+
   const jmenoNorm = makeSafeName(raw);
+
   sessionStorage.setItem('jmenoNorm', jmenoNorm);
   sessionStorage.setItem('misto', misto);
 
   document.getElementById('login').style.display = "none";
   document.getElementById('panel').style.display = "block";
   document.getElementById('logoutBtn').style.display = "inline-block";
-  document.getElementById('uzivatel').innerText = `${jmenoNorm} — ${misto}`;
 
-  obnovitStavTlacitek(jmenoNorm);
+  // Zobrazit normalizované jméno
+  document.getElementById('uzivatel').innerText = `${jmenoNorm} — ${misto}`;
 }
 
-// odhlášení
+// Odhlášení
 function odhlasit(){
   sessionStorage.clear();
   document.getElementById('panel').style.display = "none";
@@ -128,7 +119,7 @@ function odhlasit(){
   document.getElementById('logoutBtn').style.display = "none";
 }
 
-// POST
+// POST helper
 function postToScript(payload){
   return fetch(scriptURL,{
     method:'POST',
@@ -137,7 +128,7 @@ function postToScript(payload){
   }).then(r=>r.text());
 }
 
-// Interval
+// Interval (Kropení/Hrabaní)
 function zapsatInterval(typ){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm') || "neznamy";
   const misto = sessionStorage.getItem('misto') || "";
@@ -147,46 +138,28 @@ function zapsatInterval(typ){
     .catch(err=>alert("Chyba: "+err));
 }
 
-// Docházka s logikou Příchod/Odchod
+// Docházka (Příchod/Odchod) s kontrolou logiky
 function zapsatDochazku(typ){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm') || "neznamy";
   const misto = sessionStorage.getItem('misto') || "";
-  const stavKey = 'stav_'+jmenoNorm;
-  let stav = localStorage.getItem(stavKey) || 'odchod';
 
-  if(typ==='Příchod' && stav==='prichod'){ alert('Příchod již zaznamenán.'); return; }
-  if(typ==='Odchod' && stav!=='prichod'){ alert('Nejdříve zaznamenej Příchod.'); return; }
+  const stavKey = "stav_" + jmenoNorm;
+  let stav = localStorage.getItem(stavKey) || "odchod";
+
+  if(typ === "Příchod" && stav === "prichod"){ alert("Příchod již zaznamenán."); return; }
+  if(typ === "Odchod" && stav !== "prichod"){ alert("Nejdříve zaznamenej Příchod."); return; }
 
   postToScript({jmeno:jmenoNorm,jmenoNorm,misto,typ,action:'dochazka'})
     .then(txt=>{
       alert(txt);
-      if(typ==='Příchod'){
-        localStorage.setItem(stavKey,'prichod');
-      } else {
-        localStorage.setItem(stavKey,'odchod');
-      }
-      obnovitStavTlacitek(jmenoNorm);
+      // aktualizace stavu
+      if(typ==="Příchod"){ localStorage.setItem(stavKey,"prichod"); }
+      if(typ==="Odchod"){ localStorage.setItem(stavKey,"odchod"); }
     })
     .catch(err=>alert("Chyba: "+err));
 }
 
-// obnoví stav tlačítek
-function obnovitStavTlacitek(jmenoNorm){
-  const stavKey = 'stav_'+jmenoNorm;
-  const stav = localStorage.getItem(stavKey) || 'odchod';
-  const btnPr = document.getElementById('btnPrichod');
-  const btnOd = document.getElementById('btnOdchod');
-
-  if(stav==='prichod'){
-    btnPr.disabled=true;
-    btnOd.disabled=false;
-  } else {
-    btnPr.disabled=false;
-    btnOd.disabled=true;
-  }
-}
-
-// Init
+// Init z session
 (function initFromSession(){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm');
   const misto = sessionStorage.getItem('misto');
@@ -195,10 +168,8 @@ function obnovitStavTlacitek(jmenoNorm){
     document.getElementById('panel').style.display = "block";
     document.getElementById('logoutBtn').style.display = "inline-block";
     document.getElementById('uzivatel').innerText = `${jmenoNorm} — ${misto}`;
-    obnovitStavTlacitek(jmenoNorm);
   }
 })();
 </script>
 </body>
 </html>
-
