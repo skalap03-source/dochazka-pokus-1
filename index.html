@@ -4,9 +4,30 @@
   <meta charset="UTF-8">
   <title>Docházkový panel</title>
   <style>
-    body { font-family: sans-serif; max-width: 400px; margin: 40px auto; }
+    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; }
     .hidden { display: none; }
-    button { margin-top: 10px; padding: 10px 20px; font-size: 16px; margin-right: 10px; }
+    button {
+      font-weight: bold;
+      font-size: 18px;
+      padding: 12px 24px;
+      margin: 5px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+    }
+    .green { background-color: #4CAF50; color: black; }
+    .red { background-color: #F44336; color: black; }
+    .blue { background-color: #2196F3; color: black; }
+    .orange { background-color: #FF9800; color: black; }
+    .logout-btn {
+      float: right;
+      background-color: #555;
+      color: white;
+      font-size: 16px;
+    }
+    #panel h2 { margin-bottom: 10px; font-weight: bold; }
+    .row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .clearfix::after { content: ""; clear: both; display: table; }
   </style>
 </head>
 <body>
@@ -14,10 +35,10 @@
 <!-- Přihlášení -->
 <div id="login">
   <h2>Přihlášení</h2>
-  <label>Jméno a příjmení:<br>
+  <label style="font-weight:bold;">Jméno a příjmení:<br>
     <input type="text" id="jmeno">
   </label><br><br>
-  <label>Místo:<br>
+  <label style="font-weight:bold;">Místo:<br>
     <select id="misto">
       <option value="Brandýs">Brandýs</option>
       <option value="Dejvice">Dejvice</option>
@@ -33,18 +54,28 @@
       <option value="Vyšehrad">Vyšehrad</option>
     </select>
   </label><br><br>
-  <button onclick="prihlasit()">Pokračovat</button>
+  <button onclick="prihlasit()" class="blue">Pokračovat</button>
 </div>
 
 <!-- Docházkový panel -->
 <div id="panel" class="hidden">
-  <h2>Docházkový panel</h2>
-  <p id="uzivatel"></p>
-  <button onclick="zapsatInterval('Kropení')">Kropení</button>
-  <button onclick="zapsatInterval('Hrabaní')">Hrabaní</button>
-  <button onclick="zapsatDochazku('Příchod')">Příchod</button>
-  <button onclick="zapsatDochazku('Odchod')">Odchod</button>
-  <button onclick="odhlasit()">Odhlásit</button>
+  <div class="clearfix">
+    <h2>Docházkový panel</h2>
+    <button onclick="odhlasit()" class="logout-btn">Odhlásit &#x1F512;</button>
+  </div>
+  <p id="uzivatel" style="font-weight:bold;"></p>
+
+  <!-- Příchod / Odchod -->
+  <div class="row">
+    <button onclick="zapsatDochazku('Příchod')" class="green">Příchod</button>
+    <button onclick="zapsatDochazku('Odchod')" class="red">Odchod</button>
+  </div>
+
+  <!-- Kropení / Hrabaní -->
+  <div class="row">
+    <button onclick="zapsatInterval('Kropení')" class="orange">Kropení</button>
+    <button onclick="zapsatInterval('Hrabaní')" class="blue">Hrabaní</button>
+  </div>
 </div>
 
 <script>
@@ -77,27 +108,29 @@ function zapsatInterval(typ) {
   const data = { jmeno, misto, typ, cas, action: "interval" };
 
   fetch(scriptURL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(data)
-  }).then(r => r.text())
-    .then(txt => alert(txt))
-    .catch(err => alert("Chyba: " + err));
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams(data)
+  })
+  .then(r => r.text())
+  .then(txt => alert(txt))
+  .catch(err => alert("Chyba: " + err));
 }
 
 function zapsatDochazku(typ) {
   const jmeno = sessionStorage.getItem('jmeno');
   const misto = sessionStorage.getItem('misto');
 
-  const data = { jmeno, misto, typ, action: "dochazka" };
+  const data = { jmeno, misto, typ, action:"dochazka" };
 
   fetch(scriptURL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(data)
-  }).then(r => r.text())
-    .then(txt => alert(txt))
-    .catch(err => alert("Chyba: " + err));
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams(data)
+  })
+  .then(r => r.text())
+  .then(txt => alert(txt))
+  .catch(err => alert("Chyba: " + err));
 }
 </script>
 
