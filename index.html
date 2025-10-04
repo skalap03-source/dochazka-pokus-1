@@ -62,8 +62,9 @@ button {
 
 #logoutBtn {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 15px;
+  right: 15px;
+  min-width: 100px;
 }
 </style>
 </head>
@@ -121,7 +122,7 @@ button {
 <script>
 const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
 
-// normalizace jména
+// normalizace jména pro interní použití
 function normalizeName(name) {
   if(!name) return "";
   let s = name.trim();
@@ -155,7 +156,6 @@ function odhlasit(){
   document.getElementById('login').style.display="block";
 }
 
-// stav tlačítek podle localStorage
 function obnovitStavTlacitek(jmenoKey){
   const stav = localStorage.getItem('stavDochazky_'+jmenoKey) || 'odchod';
   const btnPr = document.getElementById('btnPrichod');
@@ -205,28 +205,4 @@ function zapsatDochazku(typ){
         localStorage.setItem('stavDochazky_'+jmenoKey,'prichod');
         document.getElementById('btnPrichod').disabled=true;
         document.getElementById('btnOdchod').disabled=false;
-      } else if(typ==='Odchod'){
-        localStorage.setItem('stavDochazky_'+jmenoKey,'odchod');
-        document.getElementById('btnPrichod').disabled=false;
-        document.getElementById('btnOdchod').disabled=true;
-      }
-    })
-    .catch(err=>alert("Chyba: "+err));
-}
-
-// init: zkontrolovat session a případně otevřít panel
-(function(){
-  const jmeno = sessionStorage.getItem('jmeno');
-  const misto = sessionStorage.getItem('misto');
-  const key = sessionStorage.getItem('jmenoKey');
-  if(jmeno && misto && key){
-    document.getElementById('login').style.display="none";
-    document.getElementById('panel').style.display="block";
-    document.getElementById('uzivatel').innerText=`${jmeno} (${misto})`;
-    obnovitStavTlacitek(key);
-  }
-})();
-</script>
-
-</body>
-</html>
+      } else if(typ==='Odchod
