@@ -6,7 +6,10 @@
   <style>
     body { font-family: sans-serif; max-width: 400px; margin: 40px auto; }
     .hidden { display: none; }
-    button { margin-top: 10px; padding: 10px 20px; font-size: 16px; }
+    button { margin-top: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    .kropeni { background-color: #4da3ff; color: white; border: none; margin-right: 10px; }
+    .hrabani { background-color: #4caf50; color: white; border: none; }
+    .odhlasit { background-color: #777; color: white; border: none; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -31,27 +34,24 @@
       <option value="Uhříněves">Uhříněves</option>
       <option value="Vypich">Vypich</option>
       <option value="Vyšehrad">Vyšehrad</option>
-      
     </select>
   </label><br><br>
   <button onclick="prihlasit()">Pokračovat</button>
 </div>
 
-<!-- Kropení / Hrabání -->
+<!-- Docházkový panel -->
 <div id="panel" class="hidden">
   <h2>Docházkový panel</h2>
   <p id="uzivatel"></p>
-  <button onclick="zapsat()">Kropení</button>
-  <button onclick="zapsat()">Hrabání</button>
-  
-  <button onclick="odhlasit()">Odhlásit</button>
+  <button class="kropeni" onclick="zapsat('Kropení')">Zapsat Kropení</button>
+  <button class="hrabani" onclick="zapsat('Hrabaní')">Zapsat Hrabaní</button><br>
+  <button class="odhlasit" onclick="odhlasit()">Odhlásit</button>
 </div>
 
 <script>
-// URL tvého nasazeného Apps Script Web App
+// URL Web Appu ze Scriptu (Apps Script)
 const scriptURL = "https://script.google.com/macros/s/AKfycbzWPDS7d_N8iZoupntIBO-Z3bTtmhVmcUxFSOE7MerRrls6bpTi8u3HJB8ELHoSRgRsyw/exec";
-//https://script.google.com/macros/s/AKfycbzWPDS7d_N8iZoupntIBO-Z3bTtmhVmcUxFSOE7MerRrls6bpTi8u3HJB8ELHoSRgRsyw/exec
-  //https://docs.google.com/spreadsheets/d/1ZEnyILfmWIbr73uB0YXiUnSDQkhG-VRdJIsLMSozdQw/edit?gid=521845291#gid=521845291 tohle ne
+
 function prihlasit() {
   const jmeno = document.getElementById('jmeno').value.trim();
   const misto = document.getElementById('misto').value;
@@ -71,10 +71,10 @@ function odhlasit() {
   document.getElementById('login').classList.remove('hidden');
 }
 
-function zapsat() {
+// Nová funkce zapsat s parametrem typ (Kropení / Hrabaní)
+function zapsat(typ) {
   const jmeno = sessionStorage.getItem('jmeno');
   const misto = sessionStorage.getItem('misto');
-  const typ = "Interval";
   const cas = new Date().toLocaleString('cs-CZ');
 
   const data = { jmeno, misto, typ, cas };
@@ -85,7 +85,7 @@ function zapsat() {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(data)
   }).then(() => {
-    alert(`Záznam uložen: ${cas}`);
+    alert(`Zapsáno: ${typ} – ${cas}`);
   }).catch(err => alert("Chyba při zápisu: " + err));
 }
 </script>
