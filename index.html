@@ -1,156 +1,200 @@
-// ---- Secure Apps Script for attendance ----
+<!-- HTML tlačítek -->
+<div class="buttons">
+  <button id="prichod">Příchod</button>
+  <button id="odchod">Odchod</button>
+  <button id="odhlasit">Odhlásit</button>
+</div>
 
-/**
- * Hlavní entrypoint pro POST.
- * Očekává parametry: jmeno, misto, typ, cas, action (interval|dochazka)
- */
-function doPost(e) {
-  var raw = e.parameter || {};
+<!-- CSS -->
+<style>
+.buttons {
+  display: flex;        /* Flexbox pro řádek tlačítek */
+  gap: 10px;            /* mezera mezi tlačítky */
+  align-items: center;  /* vertikální zarovnání */
+  padding: 10px;
+}
 
-  // sanitize incoming parameters
-  var rawJmeno = sanitizePlain(raw.jmeno || "Neznámý", 100);
-  var rawMisto = sanitizePlain(raw.misto || "Neznámé", 60);
-  var typ = sanitizePlain(raw.typ || "", 40);
-  var cas = sanitizePlain(raw.cas || "", 60);
-  var action = sanitizePlain(raw.action || "", 20);
+.buttons button {
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+  transition: background-color 0.2s;
+}
 
-  // Normalize jméno pro zápis i pro název listu
-  var normJmeno = normalizeName(rawJmeno);
+.buttons button:hover {
+  background-color: #e0e0e0;
+}
 
-  // current month workbook name
-  var now = new Date();
-  var year = now.getFullYear();
-  var month = ("0" + (now.getMonth() + 1)).slice(-2);
-  var ssName = "Docházka_" + year + "_" + month;
+/* Úprava jen pro tlačítko Odhlásit */
+#odhlasit {
+  margin-left: auto;    /* posune tlačítko doprava */
+  position: static;     /* zajistí, že nepřekrývá ostatní tlačítka */
+  background-color: #ff6666;
+  color: white;
+  border-color: #ff4d4d;
+}
 
-  // get or create spreadsheet for this month
-  var files = DriveApp.getFilesByName(ssName);
-  var ss;
-  if (files.hasNext()) {
-    ss = SpreadsheetApp.open(files.next());
-  } else {
-    ss = SpreadsheetApp.create(ssName);
-  }
+#odhlasit:hover {
+  background-color: #ff4d4d;
+}
+</style>
 
-  // Decide action
-  if (action === "interval") {
-    zapisKropeniHrabani(ss, normJmeno, rawMisto, typ, cas);
-  } else if (action === "dochazka") {
-    zapisDochazku(ss, normJmeno, rawMisto, typ);
-  } else {
-    return ContentService.createTextOutput("Neznámá akce")
+<!-- Apps Script kód zůstává úplně stejný -->
+<script>
+  // ---- Secure Apps Script for attendance ----
+  /**
+   * Hlavní entrypoint pro POST.
+   * Očekává parametry: jmeno, misto, typ, cas, action (interval|dochazka)
+   */
+  function doPost(e) {
+    var raw = e.parameter || {};
+
+    // sanitize incoming parameters
+    var rawJmeno = sanitizePlain(raw.jmeno || "Neznámý", 100);
+    var rawMisto = sanitizePlain(raw.misto || "Neznámé", 60);  
+    var typ = sanitizePlain(raw.typ || "", 40);
+    var cas = sanitizePlain(raw.cas || "", 60);
+    var action = sanitizePlain(raw.action || "", 20);
+
+    // Normalize jméno pro zápis i pro název listu
+    var normJmeno = normalizeName(rawJmeno);
+
+    // current month workbook name
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = ("0" + (now.getMonth() + 1)).slice(-2);
+    var ssName = "Docházka_" + year + "_" + month;
+
+    // get or create spreadsheet for this month
+    var files = DriveApp.getFilesByName(ssName);
+    var ss;
+    if (files.hasNext()) {
+      ss = SpreadsheetApp.open(files.next());
+    } else {
+      ss = SpreadsheetApp.create(ssName);
+    }
+
+    // Decide action
+    if (action === "interval") {
+      zapisKropeniHrabani(ss, normJmeno, rawMisto, typ, cas);
+    } else if (action === "dochazka") {
+      zapisDochazku(ss, normJmeno, rawMisto, typ);
+    } else {
+      return ContentService.createTextOutput("Neznámá akce")
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+
+    return ContentService.createTextOutput("Záznam uložen do sešitu: " + ssName)
       .setMimeType(ContentService.MimeType.TEXT);
   }
 
-  return ContentService.createTextOutput("Záznam uložen do sešitu: " + ssName)
-    .setMimeType(ContentService.MimeType.TEXT);
-}
-
-/** Zapis intervalu (Kropení / Hrabaní) do listu podle místa */
-function zapisKropeniHrabani(ss, jmenoNorm, mistoRaw, typRaw, casRaw) {
-  var sheetName = sanitizeSheetName(mistoRaw || "Misto");
-  var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-    sheet.appendRow(["Datum vložení", "Jméno", "Místo", "Typ", "Čas"]);
-  }
-
-  // do buněk ukládáme **normalizované jméno**
-  var jmenoCell = sanitizeForCell(jmenoNorm, 100);
-  var mistoCell = sanitizeForCell(mistoRaw, 60);
-  var typCell = sanitizeForCell(typRaw, 40);
-  var casCell = sanitizeForCell(casRaw || new Date(), 60);
-
-  sheet.appendRow([new Date(), jmenoCell, mistoCell, typCell, casCell]);
-}
-
-/** Zapis docházky podle jména (Příchod / Odchod) a výpočet odpracovaného času */
-function zapisDochazku(ss, jmenoNorm, mistoRaw, typRaw) {
-  var sheetName = sanitizeSheetName(jmenoNorm);
-  var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-    sheet.appendRow(["Jméno", "Místo", "Příchod", "Odchod", "Odpracovaný čas (hh:mm:ss)"]);
-  }
-
-  var lastRow = sheet.getLastRow();
-  var now = new Date();
-
-  var jmenoCell = sanitizeForCell(jmenoNorm, 100);
-  var mistoCell = sanitizeForCell(mistoRaw, 60);
-  var typCell = sanitizeForCell(typRaw, 40);
-
-  var lastHasPrichod = (sheet.getRange(lastRow, 3).getValue() !== "");
-  var lastHasOdchod = (sheet.getRange(lastRow, 4).getValue() !== "");
-
-  if (lastRow === 1 || (lastHasPrichod && lastHasOdchod)) {
-    if (typRaw === "Příchod") {
-      sheet.appendRow([jmenoCell, mistoCell, now, "", ""]);
-    } else if (typRaw === "Odchod") {
-      sheet.appendRow([jmenoCell, mistoCell, "", now, ""]);
-    } else {
-      return;
+  /** Zapis intervalu (Kropení / Hrabaní) do listu podle místa */
+  function zapisKropeniHrabani(ss, jmenoNorm, mistoRaw, typRaw, casRaw) {
+    var sheetName = sanitizeSheetName(mistoRaw || "Misto");
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+      sheet.appendRow(["Datum vložení", "Jméno", "Místo", "Typ", "Čas"]);
     }
-  } else {
-    if (typRaw === "Příchod") {
-      sheet.getRange(lastRow, 3).setValue(now);
-    } else if (typRaw === "Odchod") {
-      var odchod = now;
-      sheet.getRange(lastRow, 4).setValue(odchod);
 
-      var startVal = sheet.getRange(lastRow, 3).getValue();
-      var startDate = (startVal instanceof Date) ? startVal : new Date(startVal);
-      if (startDate && !isNaN(startDate.getTime())) {
-        var diffMs = odchod - startDate;
-        if (diffMs < 0) diffMs = 0;
-        var h = Math.floor(diffMs / 1000 / 60 / 60);
-        var m = Math.floor((diffMs / 1000 / 60) % 60);
-        var s = Math.floor((diffMs / 1000) % 60);
-        sheet.getRange(lastRow, 5).setValue(pad(h)+":"+pad(m)+":"+pad(s));
+    var jmenoCell = sanitizeForCell(jmenoNorm, 100);
+    var mistoCell = sanitizeForCell(mistoRaw, 60);
+    var typCell = sanitizeForCell(typRaw, 40);
+    var casCell = sanitizeForCell(casRaw || new Date(), 60);
+
+    sheet.appendRow([new Date(), jmenoCell, mistoCell, typCell, casCell]);
+  }
+
+  /** Zapis docházky podle jména (Příchod / Odchod) a výpočet odpracovaného času */
+  function zapisDochazku(ss, jmenoNorm, mistoRaw, typRaw) {
+    var sheetName = sanitizeSheetName(jmenoNorm);
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.insertSheet(sheetName);
+      sheet.appendRow(["Jméno", "Místo", "Příchod", "Odchod", "Odpracovaný čas (hh:mm:ss)"]);
+    }
+
+    var lastRow = sheet.getLastRow();
+    var now = new Date();
+
+    var jmenoCell = sanitizeForCell(jmenoNorm, 100);
+    var mistoCell = sanitizeForCell(mistoRaw, 60);
+    var typCell = sanitizeForCell(typRaw, 40);
+
+    var lastHasPrichod = false;
+    var lastHasOdchod = false;
+
+    if (lastRow >= 2) {  // kontrola, aby se nepokazilo getRange
+      lastHasPrichod = (sheet.getRange(lastRow, 3).getValue() !== "");
+      lastHasOdchod = (sheet.getRange(lastRow, 4).getValue() !== "");
+    }
+
+    if (lastRow === 1 || (lastHasPrichod && lastHasOdchod)) {
+      if (typRaw === "Příchod") {
+        sheet.appendRow([jmenoCell, mistoCell, now, "", ""]);
+      } else if (typRaw === "Odchod") {
+        sheet.appendRow([jmenoCell, mistoCell, "", now, ""]);
+      } else {
+        return;
+      }
+    } else {
+      if (typRaw === "Příchod") {
+        sheet.getRange(lastRow, 3).setValue(now);
+      } else if (typRaw === "Odchod") {
+        var odchod = now;
+        sheet.getRange(lastRow, 4).setValue(odchod);
+
+        var startVal = sheet.getRange(lastRow, 3).getValue();
+        var startDate = (startVal instanceof Date) ? startVal : new Date(startVal);
+        if (startDate && !isNaN(startDate.getTime())) {
+          var diffMs = odchod - startDate;
+          if (diffMs < 0) diffMs = 0;
+          var h = Math.floor(diffMs / 1000 / 60 / 60);
+          var m = Math.floor((diffMs / 1000 / 60) % 60);
+          var s = Math.floor((diffMs / 1000) % 60);
+          sheet.getRange(lastRow, 5).setValue(pad(h)+":"+pad(m)+":"+pad(s));
+        }
       }
     }
   }
-}
 
-/** Utility: pad number */
-function pad(n) {
-  return (n < 10 ? "0"+n : ""+n);
-}
+  function pad(n) {
+    return (n < 10 ? "0"+n : ""+n);
+  }
 
-/** Normalize name: remove diacritics, lower-case, capitalize */
-function normalizeName(name) {
-  if (!name) return "Neznámý";
-  var s = name.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-  return s.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-}
+  function normalizeName(name) {
+    if (!name) return "Neznámý";
+    var s = name.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+    return s.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  }
 
-/** Sanitize sheet name */
-function sanitizeSheetName(name) {
-  if (!name) return "Neznámý";
-  var s = name.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-  s = s.replace(/[:\\\/\?\*\[\]]/g,"");
-  s = s.replace(/[\x00-\x1F\x7F]/g,"").trim().slice(0,90);
-  return s || "Neznámý";
-}
+  function sanitizeSheetName(name) {
+    if (!name) return "Neznámý";
+    var s = name.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    s = s.replace(/[:\\\/\?\*\[\]]/g,"");
+    s = s.replace(/[\x00-\x1F\x7F]/g,"").trim().slice(0,90);
+    return s || "Neznámý";
+  }
 
-/** Sanitize plain text */
-function sanitizePlain(value, maxLen) {
-  if (!value) return "";
-  var s = value.toString();
-  s = s.replace(/<[^>]*>/g,"").replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,"");
-  s = s.replace(/[\x00-\x1F\x7F]/g,"").trim().slice(0,maxLen||200);
-  return s;
-}
+  function sanitizePlain(value, maxLen) {
+    if (!value) return "";
+    var s = value.toString();
+    s = s.replace(/<[^>]*>/g,"").replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,"");
+    s = s.replace(/[\x00-\x1F\x7F]/g,"").trim().slice(0,maxLen||200);
+    return s;
+  }
 
-/** Sanitize value for cell to prevent formula injection */
-function sanitizeForCell(value, maxLen) {
-  var s = sanitizePlain(value, maxLen||500);
-  if (!s) return s;
-  if (/^[=+\-@]/.test(s)) s = "'"+s;
-  return s;
-}
+  function sanitizeForCell(value, maxLen) {
+    var s = sanitizePlain(value, maxLen||500);
+    if (!s) return s;
+    if (/^[=+\-@]/.test(s)) s = "'"+s;
+    return s;
+  }
 
-/** GET handler */
-function doGet(e) {
-  return ContentService.createTextOutput("Web App běží, POST data se posílají přes fetch.");
-}
+  function doGet(e) {
+    return ContentService.createTextOutput("Web App běží, POST data se posílají přes fetch.");
+  }
+</script>
