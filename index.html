@@ -5,28 +5,39 @@
 <title>Docházkový panel</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;background:#f0f2f5;}
-  .modal-wrap{height:100%;display:flex;align-items:center;justify-content:center;}
-  .modal{
-    width:400px; max-width:92%;
-    background:#fff;border-radius:12px;padding:26px 22px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.15); position:relative;
-    text-align:center;
-  }
-  h2{margin:0 0 14px;font-weight:700;font-size:20px}
-  label{display:block;text-align:left;margin-bottom:8px;font-weight:700;color:#000}
-  input, select{width:100%;padding:10px;margin-bottom:12px;font-size:15px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
-  .row{display:flex;gap:12px;justify-content:center;margin:12px 0}
-  button{border:none;border-radius:8px;padding:12px 18px;font-weight:700;font-size:16px;cursor:pointer}
-  .btn-large{min-width:140px;height:52px}
-  .btn-checkin{background:#4CAF50;color:#000}
-  .btn-checkout{background:#F44336;color:#000}
-  .btn-interval{background:#d9d9d9;color:#000}
-  .btn-primary{background:#2b7cff;color:#fff}
-  #logoutBtn{position:absolute;right:14px;top:12px;background:transparent;color:#111;font-weight:700;border-radius:6px;padding:6px 8px;display:none}
-  #uzivatel{font-weight:700;margin-bottom:10px}
-  #panel{display:none}
-  @media (max-width:420px){.btn-large{min-width:120px;height:48px;font-size:15px}}
+html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;background:#f0f2f5;}
+.modal-wrap{height:100%;display:flex;align-items:center;justify-content:center;}
+.modal{
+  width:400px; max-width:92%;
+  background:#fff;border-radius:12px;padding:26px 22px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.15); position:relative;
+  text-align:center;
+}
+h2{margin:0 0 14px;font-weight:700;font-size:20px}
+label{display:block;text-align:left;margin-bottom:8px;font-weight:700;color:#000}
+input, select{width:100%;padding:10px;margin-bottom:12px;font-size:15px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
+.row{display:flex;gap:12px;justify-content:center;margin:12px 0}
+button{border:none;border-radius:8px;padding:12px 18px;font-weight:700;font-size:16px;cursor:pointer}
+.btn-large{min-width:140px;height:52px}
+.btn-checkin{background:#4CAF50;color:#000}
+.btn-checkout{background:#F44336;color:#000}
+.btn-interval{background:#d9d9d9;color:#000}
+.btn-primary{background:#2b7cff;color:#fff}
+#logoutBtn{
+  position:absolute;
+  right:14px;
+  top:12px;
+  background:transparent;
+  color:#111;
+  font-weight:700;
+  border-radius:6px;
+  padding:6px 8px;
+  display:none;
+  z-index:10;
+}
+#uzivatel{font-weight:700;margin-bottom:10px}
+#panel{display:none}
+@media (max-width:420px){.btn-large{min-width:120px;height:48px;font-size:15px}}
 </style>
 </head>
 <body>
@@ -83,36 +94,28 @@
 <script>
 const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
 
-// Normalizace jména: odstranění diakritiky, malá písmena, bezpečné znaky
 function makeSafeName(raw){
   if(!raw) return "neznamy";
-  let s = raw.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,""); // remove diacritics
+  let s = raw.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   s = s.toLowerCase().replace(/[^a-z0-9\s\-_]/g," ");
   s = s.replace(/\s+/g," ").trim();
   return s||"neznamy";
 }
 
-// Přihlášení
 function prihlasit(){
   const raw = document.getElementById('jmenoInput').value || "";
   if(!raw.trim()){ alert("Zadej jméno a příjmení"); return; }
   const misto = document.getElementById('mistoSelect').value || "";
-
   const jmenoNorm = makeSafeName(raw);
-
   sessionStorage.setItem('jmenoNorm', jmenoNorm);
   sessionStorage.setItem('misto', misto);
 
-  // zobrazit panel a logout
   document.getElementById('login').style.display = "none";
   document.getElementById('panel').style.display = "block";
   document.getElementById('logoutBtn').style.display = "inline-block";
-
-  // **zobrazit normalizované jméno**
   document.getElementById('uzivatel').innerText = `${jmenoNorm} — ${misto}`;
 }
 
-// Odhlášení
 function odhlasit(){
   sessionStorage.clear();
   document.getElementById('panel').style.display = "none";
@@ -120,7 +123,6 @@ function odhlasit(){
   document.getElementById('logoutBtn').style.display = "none";
 }
 
-// POST helper
 function postToScript(payload){
   return fetch(scriptURL,{
     method:'POST',
@@ -129,7 +131,6 @@ function postToScript(payload){
   }).then(r=>r.text());
 }
 
-// Interval (Kropení/Hrabaní)
 function zapsatInterval(typ){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm') || "neznamy";
   const misto = sessionStorage.getItem('misto') || "";
@@ -139,7 +140,6 @@ function zapsatInterval(typ){
     .catch(err=>alert("Chyba: "+err));
 }
 
-// Docházka (Příchod/Odchod)
 function zapsatDochazku(typ){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm') || "neznamy";
   const misto = sessionStorage.getItem('misto') || "";
@@ -148,7 +148,6 @@ function zapsatDochazku(typ){
     .catch(err=>alert("Chyba: "+err));
 }
 
-// Init z session
 (function initFromSession(){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm');
   const misto = sessionStorage.getItem('misto');
