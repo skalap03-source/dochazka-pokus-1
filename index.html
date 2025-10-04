@@ -36,13 +36,12 @@
 
     <button id="logoutBtn" onclick="odhlasit()">Odhlásit ⎋</button>
 
-    <!-- Přihlášení -->
     <div id="login">
       <h2>Přihlášení</h2>
       <label for="jmenoInput">Jméno a příjmení</label>
       <input id="jmenoInput" type="text" placeholder="Např. Pavel Skála" autocomplete="name" />
       <label for="mistoSelect">Místo</label>
-      <select id="mistoSelect">
+      <select id="mistoSelect" aria-label="Místo">
         <option>Brandýs</option>
         <option>Dejvice</option>
         <option>Harfa</option>
@@ -61,7 +60,6 @@
       </div>
     </div>
 
-    <!-- Panel po přihlášení -->
     <div id="panel" aria-hidden="true">
       <h2>Docházkový panel</h2>
       <div id="uzivatel"></div>
@@ -83,37 +81,42 @@
 <script>
 const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
 
-// normalizace jména (bez diakritiky, speciálních znaků, mezery)
 function makeSafeName(raw) {
-  if (!raw) return "neznamy";
-  let s = raw.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if(!raw) return "neznamy";
+  let s = raw.toString().replace(/[\x00-\x1F\x7F]/g," ").trim();
+  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   s = s.toLowerCase();
-  s = s.replace(/[^a-z0-9\s\-\_]/g, " ");
-  s = s.replace(/\s+/g, " ").trim();
-  return s || "neznamy";
+  s = s.replace(/[,\.;:`'"<>\/\\\[\]\{\}\|\(\)@#%&=\*\+\?\^\$\~`<>!–—–]/g," ");
+  s = s.replace(/(^| )[\+\-\=@]+/g," ");
+  s = s.replace(/[^a-z0-9\s\-\_]/g," ");
+  s = s.replace(/\s+/g," ").trim();
+  if(s.length===0) return "neznamy";
+  return s.slice(0,80);
 }
 
-// hezké jméno pro zobrazení
-function niceDisplayName(raw) {
-  if (!raw) return "Neznámý";
-  return raw.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" ");
+function normalizeDisplay(raw) {
+  if(!raw) return "Neznámý";
+  // Odstranění diakritiky + kapitalizace každého slova
+  let s = raw.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+  s = s.split(/\s+/).map(w=>w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+  return s;
 }
 
 function prihlasit() {
   const raw = document.getElementById('jmenoInput').value || "";
-  if (!raw.trim()) { alert("Zadej jméno a příjmení"); return; }
+  if(!raw.trim()){ alert("Zadej jméno a příjmení"); return; }
   const misto = document.getElementById('mistoSelect').value || "";
 
+  const jmenoDisplay = normalizeDisplay(raw);
   const jmenoNorm = makeSafeName(raw);
-  const jmenoDisplay = jmenoNorm; // zobrazujeme normalizované jméno, jednotné
 
   sessionStorage.setItem('jmenoDisplay', jmenoDisplay);
   sessionStorage.setItem('jmenoNorm', jmenoNorm);
   sessionStorage.setItem('misto', misto);
 
-  document.getElementById('login').style.display = "none";
-  document.getElementById('panel').style.display = "block";
-  document.getElementById('logoutBtn').style.display = "inline-block";
+  document.getElementById('login').style.display="none";
+  document.getElementById('panel').style.display="block";
+  document.getElementById('logoutBtn').style.display="inline-block";
   document.getElementById('uzivatel').innerText = `${jmenoDisplay} — ${misto}`;
 }
 
@@ -121,16 +124,16 @@ function odhlasit() {
   sessionStorage.removeItem('jmenoDisplay');
   sessionStorage.removeItem('jmenoNorm');
   sessionStorage.removeItem('misto');
-  document.getElementById('panel').style.display = "none";
-  document.getElementById('login').style.display = "block";
-  document.getElementById('logoutBtn').style.display = "none";
+  document.getElementById('panel').style.display="none";
+  document.getElementById('login').style.display="block";
+  document.getElementById('logoutBtn').style.display="none";
 }
 
 function postToScript(payload) {
-  return fetch(scriptURL,{
+  return fetch(scriptURL, {
     method:'POST',
     headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:new URLSearchParams(payload)
+    body: new URLSearchParams(payload)
   }).then(r=>r.text());
 }
 
@@ -139,35 +142,23 @@ function zapsatInterval(typ) {
   const jmenoNorm = sessionStorage.getItem('jmenoNorm') || makeSafeName(jmenoDisplay);
   const misto = sessionStorage.getItem('misto') || "";
   const cas = new Date().toLocaleString('cs-CZ');
-  postToScript({jmeno:jmenoDisplay, jmenoNorm:jmenoNorm, misto:misto, typ:typ, cas:cas, action:'interval'})
-    .then(txt=>alert(txt))
-    .catch(err=>alert("Chyba: "+err));
+
+  const payload = { jmeno:jmenoDisplay, jmenoNorm:jmenoNorm, misto:misto, typ:typ, cas:cas, action:'interval' };
+  postToScript(payload).then(txt=>alert(txt)).catch(err=>alert("Chyba: "+err));
 }
 
 function zapsatDochazku(typ) {
   const jmenoDisplay = sessionStorage.getItem('jmenoDisplay') || "";
   const jmenoNorm = sessionStorage.getItem('jmenoNorm') || makeSafeName(jmenoDisplay);
   const misto = sessionStorage.getItem('misto') || "";
-  postToScript({jmeno:jmenoDisplay, jmenoNorm:jmenoNorm, misto:misto, typ:typ, action:'dochazka'})
-    .then(txt=>alert(txt))
-    .catch(err=>alert("Chyba: "+err));
+
+  const payload = { jmeno:jmenoDisplay, jmenoNorm:jmenoNorm, misto:misto, typ:typ, action:'dochazka' };
+  postToScript(payload).then(txt=>alert(txt)).catch(err=>alert("Chyba: "+err));
 }
 
-// init: pokud už je uživatel přihlášen
+// Obnovení session
 (function initFromSession(){
   const jmenoDisplay = sessionStorage.getItem('jmenoDisplay');
   const misto = sessionStorage.getItem('misto');
-  if (jmenoDisplay && misto) {
+  if(jmenoDisplay && misto){
     document.getElementById('login').style.display="none";
-    document.getElementById('panel').style.display="block";
-    document.getElementById('logoutBtn').style.display="inline-block";
-    document.getElementById('uzivatel').innerText = `${jmenoDisplay} — ${misto}`;
-  } else {
-    document.getElementById('login').style.display="block";
-    document.getElementById('panel').style.display="none";
-    document.getElementById('logoutBtn').style.display="none";
-  }
-})();
-</script>
-</body>
-</html>
