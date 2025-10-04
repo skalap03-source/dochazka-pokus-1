@@ -1,73 +1,75 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="UTF-8">
-<title>Docházkový panel</title>
-<style>
-  body {
-    font-family: sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f0f0f0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+  <meta charset="UTF-8">
+  <title>Docházkový panel</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-  #modal {
-    background-color: white;
-    padding: 30px 40px;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-    min-width: 320px;
-    max-width: 400px;
-    text-align: center;
-    position: relative;
-  }
+    #modal {
+      background-color: white;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      min-width: 320px;
+      max-width: 400px;
+      text-align: center;
+      position: relative;
+    }
 
-  h2 { margin-top: 0; }
+    h2 {
+      margin-top: 0;
+    }
 
-  label {
-    display: block;
-    text-align: left;
-    margin-bottom: 10px;
-    font-weight: bold;
-  }
+    label {
+      display: block;
+      text-align: left;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
 
-  input, select {
-    width: 100%;
-    padding: 8px;
-    font-size: 16px;
-    margin-top: 4px;
-    margin-bottom: 15px;
-  }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      margin-top: 4px;
+      margin-bottom: 15px;
+    }
 
-  button {
-    padding: 14px 24px;
-    font-size: 16px;
-    font-weight: bold;
-    margin: 8px 6px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
+    button {
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      margin: 8px 6px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
 
-  .green { background-color: #4CAF50; color: black; }
-  .red { background-color: #F44336; color: black; }
-  .blue { background-color: #2196F3; color: white; }
-  .grey { background-color: #888888; color: white; }
+    .green { background-color: #4CAF50; color: black; }
+    .red { background-color: #F44336; color: black; }
+    .blue { background-color: #2196F3; color: white; }
+    .grey { background-color: #888888; color: white; }
 
-  #panel button {
-    min-width: 120px;
-  }
+    #panel button {
+      min-width: 120px;
+    }
 
-  #logoutBtn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-  }
-</style>
+    #logoutBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+  </style>
 </head>
 <body>
 
@@ -77,7 +79,7 @@
   <div id="login">
     <h2>Přihlášení</h2>
     <label>Jméno a příjmení:
-      <input type="text" id="jmeno" autocomplete="name">
+      <input type="text" id="jmeno">
     </label>
     <label>Místo:
       <select id="misto">
@@ -105,8 +107,8 @@
 
     <!-- Příchod / Odchod -->
     <div>
-      <button id="btnPrichod" class="green" onclick="zapsatDochazku('Příchod')">Příchod</button>
-      <button id="btnOdchod" class="red" onclick="zapsatDochazku('Odchod')">Odchod</button>
+      <button id="prichodBtn" class="green" onclick="zapsatDochazku('Příchod')">Příchod</button>
+      <button id="odchodBtn" class="red" onclick="zapsatDochazku('Odchod')" disabled>Odchod</button>
     </div>
 
     <!-- Kropení / Hrabaní -->
@@ -121,157 +123,91 @@
 </div>
 
 <script>
-/*
-  Uprav scriptURL na URL svého nasazeného Apps Script Web App
-*/
-const scriptURL = "https://script.google.com/macros/s/AKfycbyEMgvCCtdwZ2d05osFDaUgYjmqNGNJSHndXUVtBsviSB7e3a0sIK4woEYRKKK4pwsDdQ/exec";
+  const scriptURL = "https://script.google.com/macros/s/AKfycbyEMgvCCtdwZ2d05osFDaUgYjmqNGNJSHndXUVtBsviSB7e3a0sIK4woEYRKKK4pwsDdQ/exec";
 
-/* Normalizace jména na frontendu:
-   - odstraní diakritiku, převod na malá písmena
-   - odstraní nepovolené znaky, collapse mezer
-   - používáme jako klíč v localStorage (stejné i na serveru)
-*/
-function normalizeName(name) {
-  if (!name) return "";
-  let s = name.trim();
-  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // remove diacritics
-  s = s.toLowerCase();
-  s = s.replace(/[^a-z0-9\s\-]/g, " "); // keep letters, digits, spaces, dash
-  s = s.replace(/\s+/g, " ").trim();
-  return s || "neznamy";
-}
+  // Normalizace jména (odstranění diakritiky, speciálních znaků, nadbytečných mezer)
+  function normalizeName(name) {
+    return name
+      .normalize('NFD')                  // rozdělí znaky s diakritikou
+      .replace(/[\u0300-\u036f]/g, '')   // odstraní diakritiku
+      .replace(/[^a-zA-Z0-9 ]/g, '')     // odstraní speciální znaky
+      .replace(/\s+/g, ' ')              // nahradí vícenásobné mezery
+      .trim();
+  }
 
-/* inicializace: pokud je uživatel v session, otevřít panel */
-(function init() {
-  const jmeno = sessionStorage.getItem('jmeno');
-  const misto = sessionStorage.getItem('misto');
-  const jmenoKey = sessionStorage.getItem('jmenoKey');
-  if (jmeno && misto && jmenoKey) {
+  function prihlasit() {
+    let jmeno = document.getElementById('jmeno').value.trim();
+    const misto = document.getElementById('misto').value;
+    if (!jmeno) { alert('Zadej jméno'); return; }
+
+    jmeno = normalizeName(jmeno);
+
+    sessionStorage.setItem('jmeno', jmeno);
+    sessionStorage.setItem('misto', misto);
+    sessionStorage.setItem('prichodZapsan', 'false');
+
     document.getElementById('login').style.display = "none";
     document.getElementById('panel').style.display = "block";
     document.getElementById('uzivatel').innerText = `${jmeno} (${misto})`;
-    obnovitStavTlacitek(jmenoKey);
-  } else {
-    // výchozí: Odchod deaktivovaný
-    document.getElementById('btnOdchod').disabled = true;
+
+    document.getElementById('prichodBtn').disabled = false;
+    document.getElementById('odchodBtn').disabled = true;
   }
-})();
 
-function prihlasit() {
-  const raw = document.getElementById('jmeno').value.trim();
-  if (!raw) { alert('Zadej jméno'); return; }
-  const misto = document.getElementById('misto').value;
-  const key = normalizeName(raw);
-
-  sessionStorage.setItem('jmeno', raw);
-  sessionStorage.setItem('misto', misto);
-  sessionStorage.setItem('jmenoKey', key);
-
-  document.getElementById('login').style.display = "none";
-  document.getElementById('panel').style.display = "block";
-  document.getElementById('uzivatel').innerText = `${raw} (${misto})`;
-
-  obnovitStavTlacitek(key);
-}
-
-function odhlasit() {
-  // ponecháme localStorage (stav), ale odstraníme session
-  sessionStorage.removeItem('jmeno');
-  sessionStorage.removeItem('misto');
-  sessionStorage.removeItem('jmenoKey');
-
-  document.getElementById('panel').style.display = "none";
-  document.getElementById('login').style.display = "block";
-  // pokud chceš úplně "zapomenout" i stav, můžeš použít:
-  // localStorage.removeItem('stavDochazky_' + key);
-}
-
-/* obnoví stav tlačítek podle localStorage pro dané normalizované jméno */
-function obnovitStavTlacitek(jmenoKey) {
-  const stav = localStorage.getItem('stavDochazky_' + jmenoKey) || 'odchod';
-  const btnPr = document.getElementById('btnPrichod');
-  const btnOd = document.getElementById('btnOdchod');
-
-  if (stav === 'prichod') {
-    btnPr.disabled = true;
-    btnOd.disabled = false;
-  } else {
-    btnPr.disabled = false;
-    btnOd.disabled = true;
+  function odhlasit() {
+    sessionStorage.clear();
+    document.getElementById('panel').style.display = "none";
+    document.getElementById('login').style.display = "block";
   }
-}
 
-/* POST helper */
-function postToScript(payload) {
-  return fetch(scriptURL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(payload)
-  }).then(r => r.text());
-}
+  function zapsatInterval(typ){
+    const jmeno = sessionStorage.getItem('jmeno');
+    const misto = sessionStorage.getItem('misto');
+    const cas = new Date().toLocaleString('cs-CZ');
 
-/* Interval (Kropení / Hrabaní) */
-function zapsatInterval(typ) {
-  const jmeno = sessionStorage.getItem('jmeno') || "";
-  const jmenoKey = sessionStorage.getItem('jmenoKey') || normalizeName(jmeno);
-  const misto = sessionStorage.getItem('misto') || "";
-  const cas = new Date().toLocaleString('cs-CZ');
+    const data = { jmeno, misto, typ, cas, action: "interval" };
 
-  const payload = {
-    jmeno: jmeno,
-    jmenoNorm: jmenoKey,
-    misto: misto,
-    typ: typ,
-    cas: cas,
-    action: 'interval'
-  };
-
-  postToScript(payload)
-    .then(txt => alert(txt))
+    fetch(scriptURL, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams(data)
+    })
+    .then(r => r.text())
+    .then(result => alert(result))
     .catch(err => alert("Chyba: " + err));
-}
-
-/* Docházka (Příchod / Odchod) */
-function zapsatDochazku(typ) {
-  const jmeno = sessionStorage.getItem('jmeno') || "";
-  const jmenoKey = sessionStorage.getItem('jmenoKey') || normalizeName(jmeno);
-  const misto = sessionStorage.getItem('misto') || "";
-
-  // ochrana proti opakovaným klikům: pokud už jsme v 'prichod' stavu, nedovolíme znovu Příchod
-  const stav = localStorage.getItem('stavDochazky_' + jmenoKey) || 'odchod';
-  if (typ === 'Příchod' && stav === 'prichod') {
-    alert('Příchod již zaznamenán. Nejdříve klikni na Odchod.');
-    return;
-  }
-  if (typ === 'Odchod' && stav !== 'prichod') {
-    alert('Nejdříve zaznamenej Příchod.');
-    return;
   }
 
-  const payload = {
-    jmeno: jmeno,
-    jmenoNorm: jmenoKey,
-    misto: misto,
-    typ: typ,
-    action: 'dochazka'
-  };
+  function zapsatDochazku(typ){
+    const jmeno = sessionStorage.getItem('jmeno');
+    const misto = sessionStorage.getItem('misto');
 
-  postToScript(payload)
-    .then(txt => {
-      alert(txt);
-      // update UI + stav v localStorage
+    if (typ === 'Odchod' && sessionStorage.getItem('prichodZapsan') !== 'true') {
+      alert('Nejdříve musíš zapsat příchod!');
+      return;
+    }
+
+    const data = { jmeno, misto, typ, action:"dochazka" };
+
+    fetch(scriptURL, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams(data)
+    })
+    .then(r => r.text())
+    .then(result => {
+      alert(result);
       if (typ === 'Příchod') {
-        localStorage.setItem('stavDochazky_' + jmenoKey, 'prichod');
-        document.getElementById('btnPrichod').disabled = true;
-        document.getElementById('btnOdchod').disabled = false;
+        sessionStorage.setItem('prichodZapsan', 'true');
+        document.getElementById('prichodBtn').disabled = true;
+        document.getElementById('odchodBtn').disabled = false;
       } else if (typ === 'Odchod') {
-        localStorage.setItem('stavDochazky_' + jmenoKey, 'odchod');
-        document.getElementById('btnPrichod').disabled = false;
-        document.getElementById('btnOdchod').disabled = true;
+        sessionStorage.setItem('prichodZapsan', 'false');
+        document.getElementById('prichodBtn').disabled = false;
+        document.getElementById('odchodBtn').disabled = true;
       }
     })
     .catch(err => alert("Chyba: " + err));
-}
+  }
 </script>
 
 </body>
