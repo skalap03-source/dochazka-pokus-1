@@ -1,200 +1,278 @@
-<!-- HTML tlačítek -->
-<div class="buttons">
-  <button id="prichod">Příchod</button>
-  <button id="odchod">Odchod</button>
-  <button id="odhlasit">Odhlásit</button>
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Docházkový panel</title>
+<style>
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #modal {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    min-width: 320px;
+    max-width: 400px;
+    text-align: center;
+    position: relative;
+  }
+
+  h2 { margin-top: 0; }
+
+  label {
+    display: block;
+    text-align: left;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    margin-top: 4px;
+    margin-bottom: 15px;
+  }
+
+  button {
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 8px 6px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .green { background-color: #4CAF50; color: black; }
+  .red { background-color: #F44336; color: black; }
+  .blue { background-color: #2196F3; color: white; }
+  .grey { background-color: #888888; color: white; }
+
+  #panel button {
+    min-width: 120px;
+  }
+
+  #logoutBtn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div id="modal">
+
+  <!-- Přihlášení -->
+  <div id="login">
+    <h2>Přihlášení</h2>
+    <label>Jméno a příjmení:
+      <input type="text" id="jmeno" autocomplete="name">
+    </label>
+    <label>Místo:
+      <select id="misto">
+        <option value="Brandýs">Brandýs</option>
+        <option value="Dejvice">Dejvice</option>
+        <option value="Harfa">Harfa</option>
+        <option value="Máj">Máj</option>
+        <option value="Nábřeží">Nábřeží</option>
+        <option value="Ořechovka">Ořechovka</option>
+        <option value="Pražačka">Pražačka</option>
+        <option value="Příbram">Příbram</option>
+        <option value="Sofijské náměstí">Sofijské náměstí</option>
+        <option value="Uhříněves">Uhříněves</option>
+        <option value="Vypich">Vypich</option>
+        <option value="Vyšehrad">Vyšehrad</option>
+      </select>
+    </label>
+    <button class="blue" onclick="prihlasit()">Pokračovat</button>
+  </div>
+
+  <!-- Docházkový panel -->
+  <div id="panel" style="display:none;">
+    <h2>Docházkový panel</h2>
+    <p id="uzivatel" style="font-weight:bold;"></p>
+
+    <!-- Příchod / Odchod -->
+    <div>
+      <button id="btnPrichod" class="green" onclick="zapsatDochazku('Příchod')">Příchod</button>
+      <button id="btnOdchod" class="red" onclick="zapsatDochazku('Odchod')">Odchod</button>
+    </div>
+
+    <!-- Kropení / Hrabaní -->
+    <div>
+      <button class="grey" onclick="zapsatInterval('Kropení')">Kropení</button>
+      <button class="grey" onclick="zapsatInterval('Hrabaní')">Hrabaní</button>
+    </div>
+
+    <button id="logoutBtn" class="blue" onclick="odhlasit()">Odhlásit ⎋</button>
+  </div>
+
 </div>
 
-<!-- CSS -->
-<style>
-.buttons {
-  display: flex;        /* Flexbox pro řádek tlačítek */
-  gap: 10px;            /* mezera mezi tlačítky */
-  align-items: center;  /* vertikální zarovnání */
-  padding: 10px;
-}
-
-.buttons button {
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #f0f0f0;
-  transition: background-color 0.2s;
-}
-
-.buttons button:hover {
-  background-color: #e0e0e0;
-}
-
-/* Úprava jen pro tlačítko Odhlásit */
-#odhlasit {
-  margin-left: auto;    /* posune tlačítko doprava */
-  position: static;     /* zajistí, že nepřekrývá ostatní tlačítka */
-  background-color: #ff6666;
-  color: white;
-  border-color: #ff4d4d;
-}
-
-#odhlasit:hover {
-  background-color: #ff4d4d;
-}
-</style>
-
-<!-- Apps Script kód zůstává úplně stejný -->
 <script>
-  // ---- Secure Apps Script for attendance ----
-  /**
-   * Hlavní entrypoint pro POST.
-   * Očekává parametry: jmeno, misto, typ, cas, action (interval|dochazka)
-   */
-  function doPost(e) {
-    var raw = e.parameter || {};
+/*
+  Uprav scriptURL na URL svého nasazeného Apps Script Web App
+*/
+const scriptURL = "https://script.google.com/macros/s/AKfycbyEMgvCCtdwZ2d05osFDaUgYjmqNGNJSHndXUVtBsviSB7e3a0sIK4woEYRKKK4pwsDdQ/exec";
 
-    // sanitize incoming parameters
-    var rawJmeno = sanitizePlain(raw.jmeno || "Neznámý", 100);
-    var rawMisto = sanitizePlain(raw.misto || "Neznámé", 60);  
-    var typ = sanitizePlain(raw.typ || "", 40);
-    var cas = sanitizePlain(raw.cas || "", 60);
-    var action = sanitizePlain(raw.action || "", 20);
+/* Normalizace jména na frontendu:
+   - odstraní diakritiku, převod na malá písmena
+   - odstraní nepovolené znaky, collapse mezer
+   - používáme jako klíč v localStorage (stejné i na serveru)
+*/
+function normalizeName(name) {
+  if (!name) return "";
+  let s = name.trim();
+  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // remove diacritics
+  s = s.toLowerCase();
+  s = s.replace(/[^a-z0-9\s\-]/g, " "); // keep letters, digits, spaces, dash
+  s = s.replace(/\s+/g, " ").trim();
+  return s || "neznamy";
+}
 
-    // Normalize jméno pro zápis i pro název listu
-    var normJmeno = normalizeName(rawJmeno);
+/* inicializace: pokud je uživatel v session, otevřít panel */
+(function init() {
+  const jmeno = sessionStorage.getItem('jmeno');
+  const misto = sessionStorage.getItem('misto');
+  const jmenoKey = sessionStorage.getItem('jmenoKey');
+  if (jmeno && misto && jmenoKey) {
+    document.getElementById('login').style.display = "none";
+    document.getElementById('panel').style.display = "block";
+    document.getElementById('uzivatel').innerText = `${jmeno} (${misto})`;
+    obnovitStavTlacitek(jmenoKey);
+  } else {
+    // výchozí: Odchod deaktivovaný
+    document.getElementById('btnOdchod').disabled = true;
+  }
+})();
 
-    // current month workbook name
-    var now = new Date();
-    var year = now.getFullYear();
-    var month = ("0" + (now.getMonth() + 1)).slice(-2);
-    var ssName = "Docházka_" + year + "_" + month;
+function prihlasit() {
+  const raw = document.getElementById('jmeno').value.trim();
+  if (!raw) { alert('Zadej jméno'); return; }
+  const misto = document.getElementById('misto').value;
+  const key = normalizeName(raw);
 
-    // get or create spreadsheet for this month
-    var files = DriveApp.getFilesByName(ssName);
-    var ss;
-    if (files.hasNext()) {
-      ss = SpreadsheetApp.open(files.next());
-    } else {
-      ss = SpreadsheetApp.create(ssName);
-    }
+  sessionStorage.setItem('jmeno', raw);
+  sessionStorage.setItem('misto', misto);
+  sessionStorage.setItem('jmenoKey', key);
 
-    // Decide action
-    if (action === "interval") {
-      zapisKropeniHrabani(ss, normJmeno, rawMisto, typ, cas);
-    } else if (action === "dochazka") {
-      zapisDochazku(ss, normJmeno, rawMisto, typ);
-    } else {
-      return ContentService.createTextOutput("Neznámá akce")
-        .setMimeType(ContentService.MimeType.TEXT);
-    }
+  document.getElementById('login').style.display = "none";
+  document.getElementById('panel').style.display = "block";
+  document.getElementById('uzivatel').innerText = `${raw} (${misto})`;
 
-    return ContentService.createTextOutput("Záznam uložen do sešitu: " + ssName)
-      .setMimeType(ContentService.MimeType.TEXT);
+  obnovitStavTlacitek(key);
+}
+
+function odhlasit() {
+  // ponecháme localStorage (stav), ale odstraníme session
+  sessionStorage.removeItem('jmeno');
+  sessionStorage.removeItem('misto');
+  sessionStorage.removeItem('jmenoKey');
+
+  document.getElementById('panel').style.display = "none";
+  document.getElementById('login').style.display = "block";
+  // pokud chceš úplně "zapomenout" i stav, můžeš použít:
+  // localStorage.removeItem('stavDochazky_' + key);
+}
+
+/* obnoví stav tlačítek podle localStorage pro dané normalizované jméno */
+function obnovitStavTlacitek(jmenoKey) {
+  const stav = localStorage.getItem('stavDochazky_' + jmenoKey) || 'odchod';
+  const btnPr = document.getElementById('btnPrichod');
+  const btnOd = document.getElementById('btnOdchod');
+
+  if (stav === 'prichod') {
+    btnPr.disabled = true;
+    btnOd.disabled = false;
+  } else {
+    btnPr.disabled = false;
+    btnOd.disabled = true;
+  }
+}
+
+/* POST helper */
+function postToScript(payload) {
+  return fetch(scriptURL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(payload)
+  }).then(r => r.text());
+}
+
+/* Interval (Kropení / Hrabaní) */
+function zapsatInterval(typ) {
+  const jmeno = sessionStorage.getItem('jmeno') || "";
+  const jmenoKey = sessionStorage.getItem('jmenoKey') || normalizeName(jmeno);
+  const misto = sessionStorage.getItem('misto') || "";
+  const cas = new Date().toLocaleString('cs-CZ');
+
+  const payload = {
+    jmeno: jmeno,
+    jmenoNorm: jmenoKey,
+    misto: misto,
+    typ: typ,
+    cas: cas,
+    action: 'interval'
+  };
+
+  postToScript(payload)
+    .then(txt => alert(txt))
+    .catch(err => alert("Chyba: " + err));
+}
+
+/* Docházka (Příchod / Odchod) */
+function zapsatDochazku(typ) {
+  const jmeno = sessionStorage.getItem('jmeno') || "";
+  const jmenoKey = sessionStorage.getItem('jmenoKey') || normalizeName(jmeno);
+  const misto = sessionStorage.getItem('misto') || "";
+
+  // ochrana proti opakovaným klikům: pokud už jsme v 'prichod' stavu, nedovolíme znovu Příchod
+  const stav = localStorage.getItem('stavDochazky_' + jmenoKey) || 'odchod';
+  if (typ === 'Příchod' && stav === 'prichod') {
+    alert('Příchod již zaznamenán. Nejdříve klikni na Odchod.');
+    return;
+  }
+  if (typ === 'Odchod' && stav !== 'prichod') {
+    alert('Nejdříve zaznamenej Příchod.');
+    return;
   }
 
-  /** Zapis intervalu (Kropení / Hrabaní) do listu podle místa */
-  function zapisKropeniHrabani(ss, jmenoNorm, mistoRaw, typRaw, casRaw) {
-    var sheetName = sanitizeSheetName(mistoRaw || "Misto");
-    var sheet = ss.getSheetByName(sheetName);
-    if (!sheet) {
-      sheet = ss.insertSheet(sheetName);
-      sheet.appendRow(["Datum vložení", "Jméno", "Místo", "Typ", "Čas"]);
-    }
+  const payload = {
+    jmeno: jmeno,
+    jmenoNorm: jmenoKey,
+    misto: misto,
+    typ: typ,
+    action: 'dochazka'
+  };
 
-    var jmenoCell = sanitizeForCell(jmenoNorm, 100);
-    var mistoCell = sanitizeForCell(mistoRaw, 60);
-    var typCell = sanitizeForCell(typRaw, 40);
-    var casCell = sanitizeForCell(casRaw || new Date(), 60);
-
-    sheet.appendRow([new Date(), jmenoCell, mistoCell, typCell, casCell]);
-  }
-
-  /** Zapis docházky podle jména (Příchod / Odchod) a výpočet odpracovaného času */
-  function zapisDochazku(ss, jmenoNorm, mistoRaw, typRaw) {
-    var sheetName = sanitizeSheetName(jmenoNorm);
-    var sheet = ss.getSheetByName(sheetName);
-    if (!sheet) {
-      sheet = ss.insertSheet(sheetName);
-      sheet.appendRow(["Jméno", "Místo", "Příchod", "Odchod", "Odpracovaný čas (hh:mm:ss)"]);
-    }
-
-    var lastRow = sheet.getLastRow();
-    var now = new Date();
-
-    var jmenoCell = sanitizeForCell(jmenoNorm, 100);
-    var mistoCell = sanitizeForCell(mistoRaw, 60);
-    var typCell = sanitizeForCell(typRaw, 40);
-
-    var lastHasPrichod = false;
-    var lastHasOdchod = false;
-
-    if (lastRow >= 2) {  // kontrola, aby se nepokazilo getRange
-      lastHasPrichod = (sheet.getRange(lastRow, 3).getValue() !== "");
-      lastHasOdchod = (sheet.getRange(lastRow, 4).getValue() !== "");
-    }
-
-    if (lastRow === 1 || (lastHasPrichod && lastHasOdchod)) {
-      if (typRaw === "Příchod") {
-        sheet.appendRow([jmenoCell, mistoCell, now, "", ""]);
-      } else if (typRaw === "Odchod") {
-        sheet.appendRow([jmenoCell, mistoCell, "", now, ""]);
-      } else {
-        return;
+  postToScript(payload)
+    .then(txt => {
+      alert(txt);
+      // update UI + stav v localStorage
+      if (typ === 'Příchod') {
+        localStorage.setItem('stavDochazky_' + jmenoKey, 'prichod');
+        document.getElementById('btnPrichod').disabled = true;
+        document.getElementById('btnOdchod').disabled = false;
+      } else if (typ === 'Odchod') {
+        localStorage.setItem('stavDochazky_' + jmenoKey, 'odchod');
+        document.getElementById('btnPrichod').disabled = false;
+        document.getElementById('btnOdchod').disabled = true;
       }
-    } else {
-      if (typRaw === "Příchod") {
-        sheet.getRange(lastRow, 3).setValue(now);
-      } else if (typRaw === "Odchod") {
-        var odchod = now;
-        sheet.getRange(lastRow, 4).setValue(odchod);
-
-        var startVal = sheet.getRange(lastRow, 3).getValue();
-        var startDate = (startVal instanceof Date) ? startVal : new Date(startVal);
-        if (startDate && !isNaN(startDate.getTime())) {
-          var diffMs = odchod - startDate;
-          if (diffMs < 0) diffMs = 0;
-          var h = Math.floor(diffMs / 1000 / 60 / 60);
-          var m = Math.floor((diffMs / 1000 / 60) % 60);
-          var s = Math.floor((diffMs / 1000) % 60);
-          sheet.getRange(lastRow, 5).setValue(pad(h)+":"+pad(m)+":"+pad(s));
-        }
-      }
-    }
-  }
-
-  function pad(n) {
-    return (n < 10 ? "0"+n : ""+n);
-  }
-
-  function normalizeName(name) {
-    if (!name) return "Neznámý";
-    var s = name.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-    return s.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-  }
-
-  function sanitizeSheetName(name) {
-    if (!name) return "Neznámý";
-    var s = name.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    s = s.replace(/[:\\\/\?\*\[\]]/g,"");
-    s = s.replace(/[\x00-\x1F\x7F]/g,"").trim().slice(0,90);
-    return s || "Neznámý";
-  }
-
-  function sanitizePlain(value, maxLen) {
-    if (!value) return "";
-    var s = value.toString();
-    s = s.replace(/<[^>]*>/g,"").replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,"");
-    s = s.replace(/[\x00-\x1F\x7F]/g,"").trim().slice(0,maxLen||200);
-    return s;
-  }
-
-  function sanitizeForCell(value, maxLen) {
-    var s = sanitizePlain(value, maxLen||500);
-    if (!s) return s;
-    if (/^[=+\-@]/.test(s)) s = "'"+s;
-    return s;
-  }
-
-  function doGet(e) {
-    return ContentService.createTextOutput("Web App běží, POST data se posílají přes fetch.");
-  }
+    })
+    .catch(err => alert("Chyba: " + err));
+}
 </script>
+
+</body>
+</html>
