@@ -1,156 +1,79 @@
-// ---- Secure Apps Script for attendance ----
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Docházkový panel</title>
+  <style>
+    body { font-family: sans-serif; margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#f5f5f5; }
+    #panel, #login { background:white; padding:30px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.2); text-align:center; }
+    button { padding:15px 25px; font-size:16px; margin:10px; font-weight:bold; color:#000; border:none; border-radius:8px; cursor:pointer; }
+    #prichod { background:#4CAF50; color:white; }
+    #odchod { background:#F44336; color:white; }
+    #kropeni, #hrabani { background:#2196F3; color:white; }
+    #odhlasit { background:#555; color:white; position:absolute; top:20px; right:20px; padding:10px; font-size:14px; border-radius:50px; }
+    select, input { font-size:16px; padding:8px; margin:5px 0; width:100%; }
+  </style>
+</head>
+<body>
 
-/**
- * Hlavní entrypoint pro POST.
- * Očekává parametry: jmeno, misto, typ, cas, action (interval|dochazka)
- */
-function doPost(e) {
-  var raw = e.parameter || {};
+<!-- Přihlášení -->
+<div id="login">
+  <h2>Přihlášení</h2>
+  <input type="text" id="jmeno" placeholder="Jméno a příjmení">
+  <select id="misto">
+    <option value="Brandýs">Brandýs</option>
+    <option value="Dejvice">Dejvice</option>
+    <option value="Harfa">Harfa</option>
+    <option value="Máj">Máj</option>
+    <option value="Nábřeží">Nábřeží</option>
+    <option value="Ořechovka">Ořechovka</option>
+    <option value="Pražačka">Pražačka</option>
+    <option value="Příbram">Příbram</option>
+    <option value="Sofijské náměstí">Sofijské náměstí</option>
+    <option value="Uhříněves">Uhříněves</option>
+    <option value="Vypich">Vypich</option>
+    <option value="Vyšehrad">Vyšehrad</option>
+  </select>
+  <button onclick="prihlasit()">Pokračovat</button>
+</div>
 
-  // sanitize incoming parameters
-  var rawJmeno = sanitizePlain(raw.jmeno || "Neznámý", 100);
-  var rawMisto = sanitizePlain(raw.misto || "Neznámé", 60);
-  var typ = sanitizePlain(raw.typ || "", 40);
-  var cas = sanitizePlain(raw.cas || "", 60);
-  var action = sanitizePlain(raw.action || "", 20);
+<!-- Panel -->
+<div id="panel" class="hidden">
+  <button id="odhlasit" onclick="odhlasit()">Odhlásit ⨯</button>
+  <h2 id="uzivatel"></h2>
+  <div>
+    <button id="prichod" onclick="zapsatDochazku('Příchod')">Příchod</button>
+    <button id="odchod" onclick="zapsatDochazku('Odchod')">Odchod</button>
+  </div>
+  <div>
+    <button id="kropeni" onclick="zapsatInterval('Kropení')">Kropení</button>
+    <button id="hrabani" onclick="zapsatInterval('Hrabání')">Hrabání</button>
+  </div>
+</div>
 
-  // Normalize jméno pro zápis i pro název listu
-  var normJmeno = normalizeName(rawJmeno);
+<script>
+const scriptURL = "TVÁ_URL_APPS_SCRIPT"; // sem vlož nasazený URL Web App
 
-  // current month workbook name
-  var now = new Date();
-  var year = now.getFullYear();
-  var month = ("0" + (now.getMonth() + 1)).slice(-2);
-  var ssName = "Docházka_" + year + "_" + month;
-
-  // get or create spreadsheet for this month
-  var files = DriveApp.getFilesByName(ssName);
-  var ss;
-  if (files.hasNext()) {
-    ss = SpreadsheetApp.open(files.next());
-  } else {
-    ss = SpreadsheetApp.create(ssName);
-  }
-
-  // Decide action
-  if (action === "interval") {
-    zapisKropeniHrabani(ss, normJmeno, rawMisto, typ, cas);
-  } else if (action === "dochazka") {
-    zapisDochazku(ss, normJmeno, rawMisto, typ);
-  } else {
-    return ContentService.createTextOutput("Neznámá akce")
-      .setMimeType(ContentService.MimeType.TEXT);
-  }
-
-  return ContentService.createTextOutput("Záznam uložen do sešitu: " + ssName)
-    .setMimeType(ContentService.MimeType.TEXT);
+function prihlasit() {
+  let jmeno = document.getElementById('jmeno').value.trim();
+  let misto = document.getElementById('misto').value;
+  if(!jmeno){ alert("Zadejte jméno"); return; }
+  sessionStorage.setItem("jmeno", jmeno);
+  sessionStorage.setItem("misto", misto);
+  document.getElementById('login').classList.add("hidden");
+  document.getElementById('panel').classList.remove("hidden");
+  document.getElementById('uzivatel').innerText = `${jmeno} (${misto})`;
 }
 
-/** Zapis intervalu (Kropení / Hrabaní) do listu podle místa */
-function zapisKropeniHrabani(ss, jmenoNorm, mistoRaw, typRaw, casRaw) {
-  var sheetName = sanitizeSheetName(mistoRaw || "Misto");
-  var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-    sheet.appendRow(["Datum vložení", "Jméno", "Místo", "Typ", "Čas"]);
-  }
-
-  // do buněk ukládáme **normalizované jméno**
-  var jmenoCell = sanitizeForCell(jmenoNorm, 100);
-  var mistoCell = sanitizeForCell(mistoRaw, 60);
-  var typCell = sanitizeForCell(typRaw, 40);
-  var casCell = sanitizeForCell(casRaw || new Date(), 60);
-
-  sheet.appendRow([new Date(), jmenoCell, mistoCell, typCell, casCell]);
+function odhlasit(){
+  sessionStorage.clear();
+  document.getElementById('panel').classList.add("hidden");
+  document.getElementById('login').classList.remove("hidden");
 }
 
-/** Zapis docházky podle jména (Příchod / Odchod) a výpočet odpracovaného času */
-function zapisDochazku(ss, jmenoNorm, mistoRaw, typRaw) {
-  var sheetName = sanitizeSheetName(jmenoNorm);
-  var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
-    sheet.appendRow(["Jméno", "Místo", "Příchod", "Odchod", "Odpracovaný čas (hh:mm:ss)"]);
-  }
-
-  var lastRow = sheet.getLastRow();
-  var now = new Date();
-
-  var jmenoCell = sanitizeForCell(jmenoNorm, 100);
-  var mistoCell = sanitizeForCell(mistoRaw, 60);
-  var typCell = sanitizeForCell(typRaw, 40);
-
-  var lastHasPrichod = (sheet.getRange(lastRow, 3).getValue() !== "");
-  var lastHasOdchod = (sheet.getRange(lastRow, 4).getValue() !== "");
-
-  if (lastRow === 1 || (lastHasPrichod && lastHasOdchod)) {
-    if (typRaw === "Příchod") {
-      sheet.appendRow([jmenoCell, mistoCell, now, "", ""]);
-    } else if (typRaw === "Odchod") {
-      sheet.appendRow([jmenoCell, mistoCell, "", now, ""]);
-    } else {
-      return;
-    }
-  } else {
-    if (typRaw === "Příchod") {
-      sheet.getRange(lastRow, 3).setValue(now);
-    } else if (typRaw === "Odchod") {
-      var odchod = now;
-      sheet.getRange(lastRow, 4).setValue(odchod);
-
-      var startVal = sheet.getRange(lastRow, 3).getValue();
-      var startDate = (startVal instanceof Date) ? startVal : new Date(startVal);
-      if (startDate && !isNaN(startDate.getTime())) {
-        var diffMs = odchod - startDate;
-        if (diffMs < 0) diffMs = 0;
-        var h = Math.floor(diffMs / 1000 / 60 / 60);
-        var m = Math.floor((diffMs / 1000 / 60) % 60);
-        var s = Math.floor((diffMs / 1000) % 60);
-        sheet.getRange(lastRow, 5).setValue(pad(h)+":"+pad(m)+":"+pad(s));
-      }
-    }
-  }
-}
-
-/** Utility: pad number */
-function pad(n) {
-  return (n < 10 ? "0"+n : ""+n);
-}
-
-/** Normalize name: remove diacritics, lower-case, capitalize */
-function normalizeName(name) {
-  if (!name) return "Neznámý";
-  var s = name.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
-  return s.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-}
-
-/** Sanitize sheet name */
-function sanitizeSheetName(name) {
-  if (!name) return "Neznámý";
-  var s = name.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-  s = s.replace(/[:\\\/\?\*\[\]]/g,"");
-  s = s.replace(/[\x00-\x1F\x7F]/g,"").trim().slice(0,90);
-  return s || "Neznámý";
-}
-
-/** Sanitize plain text */
-function sanitizePlain(value, maxLen) {
-  if (!value) return "";
-  var s = value.toString();
-  s = s.replace(/<[^>]*>/g,"").replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi,"");
-  s = s.replace(/[\x00-\x1F\x7F]/g,"").trim().slice(0,maxLen||200);
-  return s;
-}
-
-/** Sanitize value for cell to prevent formula injection */
-function sanitizeForCell(value, maxLen) {
-  var s = sanitizePlain(value, maxLen||500);
-  if (!s) return s;
-  if (/^[=+\-@]/.test(s)) s = "'"+s;
-  return s;
-}
-
-/** GET handler */
-function doGet(e) {
-  return ContentService.createTextOutput("Web App běží, POST data se posílají přes fetch.");
-}
+function zapsatInterval(typ){
+  const jmeno = sessionStorage.getItem("jmeno");
+  const misto = sessionStorage.getItem("misto");
+  const data = { jmeno, misto, typ, cas: new Date(), action:"interval" };
+  fetch(scriptURL,{ method:"POST", body: new URLSearchParams(data) })
+  .then(r=>r.text()).then(alert).
