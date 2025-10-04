@@ -78,8 +78,8 @@ button{border:none;border-radius:8px;padding:12px 18px;font-weight:700;font-size
       <div id="uzivatel"></div>
 
       <div class="row">
-        <button class="btn-checkin btn-large" onclick="zapsatDochazku('Příchod')">Příchod</button>
-        <button class="btn-checkout btn-large" onclick="zapsatDochazku('Odchod')">Odchod</button>
+        <button id="btnPrichod" class="btn-checkin btn-large" onclick="zapsatDochazku('Příchod')">Příchod</button>
+        <button id="btnOdchod" class="btn-checkout btn-large" onclick="zapsatDochazku('Odchod')">Odchod</button>
       </div>
 
       <div class="row">
@@ -94,6 +94,7 @@ button{border:none;border-radius:8px;padding:12px 18px;font-weight:700;font-size
 <script>
 const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
 
+// normalizace jména
 function makeSafeName(raw){
   if(!raw) return "neznamy";
   let s = raw.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -102,6 +103,7 @@ function makeSafeName(raw){
   return s||"neznamy";
 }
 
+// přihlášení
 function prihlasit(){
   const raw = document.getElementById('jmenoInput').value || "";
   if(!raw.trim()){ alert("Zadej jméno a příjmení"); return; }
@@ -114,8 +116,11 @@ function prihlasit(){
   document.getElementById('panel').style.display = "block";
   document.getElementById('logoutBtn').style.display = "inline-block";
   document.getElementById('uzivatel').innerText = `${jmenoNorm} — ${misto}`;
+
+  obnovitStavTlacitek(jmenoNorm);
 }
 
+// odhlášení
 function odhlasit(){
   sessionStorage.clear();
   document.getElementById('panel').style.display = "none";
@@ -123,6 +128,7 @@ function odhlasit(){
   document.getElementById('logoutBtn').style.display = "none";
 }
 
+// POST
 function postToScript(payload){
   return fetch(scriptURL,{
     method:'POST',
@@ -131,6 +137,7 @@ function postToScript(payload){
   }).then(r=>r.text());
 }
 
+// Interval
 function zapsatInterval(typ){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm') || "neznamy";
   const misto = sessionStorage.getItem('misto') || "";
@@ -140,14 +147,46 @@ function zapsatInterval(typ){
     .catch(err=>alert("Chyba: "+err));
 }
 
+// Docházka s logikou Příchod/Odchod
 function zapsatDochazku(typ){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm') || "neznamy";
   const misto = sessionStorage.getItem('misto') || "";
+  const stavKey = 'stav_'+jmenoNorm;
+  let stav = localStorage.getItem(stavKey) || 'odchod';
+
+  if(typ==='Příchod' && stav==='prichod'){ alert('Příchod již zaznamenán.'); return; }
+  if(typ==='Odchod' && stav!=='prichod'){ alert('Nejdříve zaznamenej Příchod.'); return; }
+
   postToScript({jmeno:jmenoNorm,jmenoNorm,misto,typ,action:'dochazka'})
-    .then(txt=>alert(txt))
+    .then(txt=>{
+      alert(txt);
+      if(typ==='Příchod'){
+        localStorage.setItem(stavKey,'prichod');
+      } else {
+        localStorage.setItem(stavKey,'odchod');
+      }
+      obnovitStavTlacitek(jmenoNorm);
+    })
     .catch(err=>alert("Chyba: "+err));
 }
 
+// obnoví stav tlačítek
+function obnovitStavTlacitek(jmenoNorm){
+  const stavKey = 'stav_'+jmenoNorm;
+  const stav = localStorage.getItem(stavKey) || 'odchod';
+  const btnPr = document.getElementById('btnPrichod');
+  const btnOd = document.getElementById('btnOdchod');
+
+  if(stav==='prichod'){
+    btnPr.disabled=true;
+    btnOd.disabled=false;
+  } else {
+    btnPr.disabled=false;
+    btnOd.disabled=true;
+  }
+}
+
+// Init
 (function initFromSession(){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm');
   const misto = sessionStorage.getItem('misto');
@@ -156,6 +195,7 @@ function zapsatDochazku(typ){
     document.getElementById('panel').style.display = "block";
     document.getElementById('logoutBtn').style.display = "inline-block";
     document.getElementById('uzivatel').innerText = `${jmenoNorm} — ${misto}`;
+    obnovitStavTlacitek(jmenoNorm);
   }
 })();
 </script>
