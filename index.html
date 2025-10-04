@@ -1,79 +1,182 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <title>Docházkový panel</title>
-  <style>
-    body { font-family: sans-serif; margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#f5f5f5; }
-    #panel, #login { background:white; padding:30px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.2); text-align:center; }
-    button { padding:15px 25px; font-size:16px; margin:10px; font-weight:bold; color:#000; border:none; border-radius:8px; cursor:pointer; }
-    #prichod { background:#4CAF50; color:white; }
-    #odchod { background:#F44336; color:white; }
-    #kropeni, #hrabani { background:#2196F3; color:white; }
-    #odhlasit { background:#555; color:white; position:absolute; top:20px; right:20px; padding:10px; font-size:14px; border-radius:50px; }
-    select, input { font-size:16px; padding:8px; margin:5px 0; width:100%; }
-  </style>
+<meta charset="UTF-8">
+<title>Docházkový panel</title>
+<style>
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #modal {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    min-width: 320px;
+    max-width: 400px;
+    text-align: center;
+  }
+
+  h2 {
+    margin-top: 0;
+  }
+
+  label {
+    display: block;
+    text-align: left;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+
+  input, select {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    margin-top: 4px;
+    margin-bottom: 15px;
+  }
+
+  button {
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 8px 6px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .green { background-color: #4CAF50; color: black; }
+  .red { background-color: #F44336; color: black; }
+  .blue { background-color: #2196F3; color: white; }
+  .grey { background-color: #888888; color: white; }
+
+  #panel button {
+    min-width: 120px;
+  }
+
+  #logoutBtn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+
+</style>
 </head>
 <body>
 
-<!-- Přihlášení -->
-<div id="login">
-  <h2>Přihlášení</h2>
-  <input type="text" id="jmeno" placeholder="Jméno a příjmení">
-  <select id="misto">
-    <option value="Brandýs">Brandýs</option>
-    <option value="Dejvice">Dejvice</option>
-    <option value="Harfa">Harfa</option>
-    <option value="Máj">Máj</option>
-    <option value="Nábřeží">Nábřeží</option>
-    <option value="Ořechovka">Ořechovka</option>
-    <option value="Pražačka">Pražačka</option>
-    <option value="Příbram">Příbram</option>
-    <option value="Sofijské náměstí">Sofijské náměstí</option>
-    <option value="Uhříněves">Uhříněves</option>
-    <option value="Vypich">Vypich</option>
-    <option value="Vyšehrad">Vyšehrad</option>
-  </select>
-  <button onclick="prihlasit()">Pokračovat</button>
-</div>
+<div id="modal">
 
-<!-- Panel -->
-<div id="panel" class="hidden">
-  <button id="odhlasit" onclick="odhlasit()">Odhlásit ⨯</button>
-  <h2 id="uzivatel"></h2>
-  <div>
-    <button id="prichod" onclick="zapsatDochazku('Příchod')">Příchod</button>
-    <button id="odchod" onclick="zapsatDochazku('Odchod')">Odchod</button>
+  <!-- Přihlášení -->
+  <div id="login">
+    <h2>Přihlášení</h2>
+    <label>Jméno a příjmení:
+      <input type="text" id="jmeno">
+    </label>
+    <label>Místo:
+      <select id="misto">
+        <option value="Brandýs">Brandýs</option>
+        <option value="Dejvice">Dejvice</option>
+        <option value="Harfa">Harfa</option>
+        <option value="Máj">Máj</option>
+        <option value="Nábřeží">Nábřeží</option>
+        <option value="Ořechovka">Ořechovka</option>
+        <option value="Pražačka">Pražačka</option>
+        <option value="Příbram">Příbram</option>
+        <option value="Sofijské náměstí">Sofijské náměstí</option>
+        <option value="Uhříněves">Uhříněves</option>
+        <option value="Vypich">Vypich</option>
+        <option value="Vyšehrad">Vyšehrad</option>
+      </select>
+    </label>
+    <button class="blue" onclick="prihlasit()">Pokračovat</button>
   </div>
-  <div>
-    <button id="kropeni" onclick="zapsatInterval('Kropení')">Kropení</button>
-    <button id="hrabani" onclick="zapsatInterval('Hrabání')">Hrabání</button>
+
+  <!-- Docházkový panel -->
+  <div id="panel" style="display:none;">
+    <h2>Docházkový panel</h2>
+    <p id="uzivatel" style="font-weight:bold;"></p>
+
+    <!-- Příchod / Odchod -->
+    <div>
+      <button class="green" onclick="zapsatDochazku('Příchod')">Příchod</button>
+      <button class="red" onclick="zapsatDochazku('Odchod')">Odchod</button>
+    </div>
+
+    <!-- Kropení / Hrabaní -->
+    <div>
+      <button class="grey" onclick="zapsatInterval('Kropení')">Kropení</button>
+      <button class="grey" onclick="zapsatInterval('Hrabaní')">Hrabaní</button>
+    </div>
+
+    <button id="logoutBtn" class="blue" onclick="odhlasit()">Odhlásit ⎋</button>
   </div>
+
 </div>
 
 <script>
-const scriptURL = "TVÁ_URL_APPS_SCRIPT"; // sem vlož nasazený URL Web App
+const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
 
 function prihlasit() {
-  let jmeno = document.getElementById('jmeno').value.trim();
-  let misto = document.getElementById('misto').value;
-  if(!jmeno){ alert("Zadejte jméno"); return; }
-  sessionStorage.setItem("jmeno", jmeno);
-  sessionStorage.setItem("misto", misto);
-  document.getElementById('login').classList.add("hidden");
-  document.getElementById('panel').classList.remove("hidden");
+  const jmeno = document.getElementById('jmeno').value.trim();
+  const misto = document.getElementById('misto').value;
+  if (!jmeno) { alert('Zadej jméno'); return; }
+
+  sessionStorage.setItem('jmeno', jmeno);
+  sessionStorage.setItem('misto', misto);
+
+  document.getElementById('login').style.display = "none";
+  document.getElementById('panel').style.display = "block";
   document.getElementById('uzivatel').innerText = `${jmeno} (${misto})`;
 }
 
-function odhlasit(){
+function odhlasit() {
   sessionStorage.clear();
-  document.getElementById('panel').classList.add("hidden");
-  document.getElementById('login').classList.remove("hidden");
+  document.getElementById('panel').style.display = "none";
+  document.getElementById('login').style.display = "block";
 }
 
 function zapsatInterval(typ){
-  const jmeno = sessionStorage.getItem("jmeno");
-  const misto = sessionStorage.getItem("misto");
-  const data = { jmeno, misto, typ, cas: new Date(), action:"interval" };
-  fetch(scriptURL,{ method:"POST", body: new URLSearchParams(data) })
-  .then(r=>r.text()).then(alert).
+  const jmeno = sessionStorage.getItem('jmeno');
+  const misto = sessionStorage.getItem('misto');
+  const cas = new Date().toLocaleString('cs-CZ');
+
+  const data = { jmeno, misto, typ, cas, action: "interval" };
+
+  fetch(scriptURL,{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: new URLSearchParams(data)
+  })
+  .then(response => response.text())
+  .then(result => alert(result))
+  .catch(err => alert("Chyba: " + err));
+}
+
+function zapsatDochazku(typ){
+  const jmeno = sessionStorage.getItem('jmeno');
+  const misto = sessionStorage.getItem('misto');
+
+  const data = { jmeno, misto, typ, action:"dochazka" };
+
+  fetch(scriptURL,{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: new URLSearchParams(data)
+  })
+  .then(response => response.text())
+  .then(result => alert(result))
+  .catch(err => alert("Chyba: " + err));
+}
+</script>
+
+</body>
+</html>
