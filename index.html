@@ -1,95 +1,155 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-  <meta charset="UTF-8">
-  <title>Docházkový panel</title>
-  <style>
-    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; }
-    .hidden { display: none; }
-    button {
-      font-weight: bold;
-      font-size: 18px;
-      padding: 12px 24px;
-      margin: 5px;
-      cursor: pointer;
-      border: none;
-      border-radius: 5px;
-    }
-    .green { background-color: #4CAF50; color: black; }
-    .red { background-color: #F44336; color: black; }
-    .blue { background-color: #2196F3; color: black; }
-    .orange { background-color: #FF9800; color: black; }
-    .logout-btn {
-      float: right;
-      background-color: #555;
-      color: white;
-      font-size: 16px;
-    }
-    #panel h2 { margin-bottom: 10px; font-weight: bold; }
-    .row { display: flex; gap: 10px; margin-bottom: 10px; }
-    .clearfix::after { content: ""; clear: both; display: table; }
-  </style>
+<meta charset="UTF-8">
+<title>Docházkový panel</title>
+<style>
+  /* Celé pozadí pro modal */
+  #modalBackground {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5);
+  }
+
+  /* Centrální modal */
+  #panelModal {
+    background-color: #fff;
+    width: 400px;
+    max-width: 90%;
+    padding: 20px;
+    border-radius: 10px;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    font-family: sans-serif;
+  }
+
+  /* Odhlášení nahoře vpravo */
+  #logoutBtn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    color: #000;
+  }
+  #logoutBtn i {
+    margin-left: 5px;
+  }
+
+  h2 { text-align: center; font-weight: bold; margin-bottom: 20px; }
+  #uzivatel { text-align: center; font-weight: bold; margin-bottom: 20px; }
+
+  /* Styl tlačítek */
+  .actionBtn {
+    width: 100px;
+    height: 50px;
+    font-weight: bold;
+    font-size: 16px;
+    margin: 5px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    color: #000;
+  }
+
+  .greenBtn { background-color: #4CAF50; color: #fff; }
+  .redBtn { background-color: #F44336; color: #fff; }
+  .grayBtn { background-color: #ccc; }
+
+  #intervalBtns {
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  #login { display: none; text-align: center; }
+  #login input, #login select { width: 80%; padding: 5px; margin-bottom: 10px; }
+  #login button { width: 50%; padding: 10px; font-weight: bold; }
+</style>
 </head>
 <body>
 
-<!-- Přihlášení -->
-<div id="login">
-  <h2>Přihlášení</h2>
-  <label style="font-weight:bold;">Jméno a příjmení:<br>
-    <input type="text" id="jmeno">
-  </label><br><br>
-  <label style="font-weight:bold;">Místo:<br>
-    <select id="misto">
-      <option value="Brandýs">Brandýs</option>
-      <option value="Dejvice">Dejvice</option>
-      <option value="Harfa">Harfa</option>
-      <option value="Máj">Máj</option>
-      <option value="Nábřeží">Nábřeží</option>
-      <option value="Ořechovka">Ořechovka</option>
-      <option value="Pražačka">Pražačka</option>
-      <option value="Příbram">Příbram</option>
-      <option value="Sofijské náměstí">Sofijské náměstí</option>
-      <option value="Uhříněves">Uhříněves</option>
-      <option value="Vypich">Vypich</option>
-      <option value="Vyšehrad">Vyšehrad</option>
-    </select>
-  </label><br><br>
-  <button onclick="prihlasit()" class="blue">Pokračovat</button>
-</div>
+<!-- Tlačítko pro otevření modal -->
+<button onclick="openPanel()" style="position: fixed; bottom: 20px; right: 20px; padding: 10px 20px;">Docházka</button>
 
-<!-- Docházkový panel -->
-<div id="panel" class="hidden">
-  <div class="clearfix">
-    <h2>Docházkový panel</h2>
-    <button onclick="odhlasit()" class="logout-btn">Odhlásit &#x1F512;</button>
-  </div>
-  <p id="uzivatel" style="font-weight:bold;"></p>
+<!-- Modal Background -->
+<div id="modalBackground">
+  <div id="panelModal">
 
-  <!-- Příchod / Odchod -->
-  <div class="row">
-    <button onclick="zapsatDochazku('Příchod')" class="green">Příchod</button>
-    <button onclick="zapsatDochazku('Odchod')" class="red">Odchod</button>
-  </div>
+    <!-- Odhlášení -->
+    <button id="logoutBtn" onclick="odhlasit()">Odhlásit <i>⎋</i></button>
 
-  <!-- Kropení / Hrabaní -->
-  <div class="row">
-    <button onclick="zapsatInterval('Kropení')" class="orange">Kropení</button>
-    <button onclick="zapsatInterval('Hrabaní')" class="blue">Hrabaní</button>
+    <!-- Přihlášení -->
+    <div id="login">
+      <h2>Přihlášení</h2>
+      <input type="text" id="jmeno" placeholder="Jméno a příjmení"><br>
+      <select id="misto">
+        <option value="Brandýs">Brandýs</option>
+        <option value="Dejvice">Dejvice</option>
+        <option value="Harfa">Harfa</option>
+        <option value="Máj">Máj</option>
+        <option value="Nábřeží">Nábřeží</option>
+        <option value="Ořechovka">Ořechovka</option>
+        <option value="Pražačka">Pražačka</option>
+        <option value="Příbram">Příbram</option>
+        <option value="Sofijské náměstí">Sofijské náměstí</option>
+        <option value="Uhříněves">Uhříněves</option>
+        <option value="Vypich">Vypich</option>
+        <option value="Vyšehrad">Vyšehrad</option>
+      </select><br>
+      <button onclick="prihlasit()">Pokračovat</button>
+    </div>
+
+    <!-- Panel akčních tlačítek -->
+    <div id="panel" class="hidden">
+      <h2>Docházkový panel</h2>
+      <p id="uzivatel"></p>
+      <div>
+        <button class="actionBtn greenBtn" onclick="zapsatDochazku('Příchod')">Příchod</button>
+        <button class="actionBtn redBtn" onclick="zapsatDochazku('Odchod')">Odchod</button>
+      </div>
+      <div id="intervalBtns">
+        <button class="actionBtn grayBtn" onclick="zapsatInterval('Kropení')">Kropení</button>
+        <button class="actionBtn grayBtn" onclick="zapsatInterval('Hrabaní')">Hrabaní</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
 const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
 
+function openPanel() {
+  document.getElementById('modalBackground').style.display = 'block';
+  if (!sessionStorage.getItem('jmeno')) {
+    document.getElementById('login').style.display = 'block';
+    document.getElementById('panel').classList.add('hidden');
+  } else {
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('panel').classList.remove('hidden');
+    const jmeno = sessionStorage.getItem('jmeno');
+    const misto = sessionStorage.getItem('misto');
+    document.getElementById('uzivatel').innerText = `${jmeno} (${misto})`;
+  }
+}
+
 function prihlasit() {
   const jmeno = document.getElementById('jmeno').value.trim();
   const misto = document.getElementById('misto').value;
   if (!jmeno) { alert('Zadej jméno'); return; }
-
   sessionStorage.setItem('jmeno', jmeno);
   sessionStorage.setItem('misto', misto);
-
-  document.getElementById('login').classList.add('hidden');
+  document.getElementById('login').style.display = 'none';
   document.getElementById('panel').classList.remove('hidden');
   document.getElementById('uzivatel').innerText = `${jmeno} (${misto})`;
 }
@@ -97,39 +157,37 @@ function prihlasit() {
 function odhlasit() {
   sessionStorage.clear();
   document.getElementById('panel').classList.add('hidden');
-  document.getElementById('login').classList.remove('hidden');
+  document.getElementById('login').style.display = 'block';
 }
 
-function zapsatInterval(typ) {
+function zapsatInterval(typ){
   const jmeno = sessionStorage.getItem('jmeno');
   const misto = sessionStorage.getItem('misto');
   const cas = new Date().toLocaleString('cs-CZ');
-
   const data = { jmeno, misto, typ, cas, action: "interval" };
 
-  fetch(scriptURL, {
+  fetch(scriptURL,{
     method:'POST',
     headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:new URLSearchParams(data)
+    body: new URLSearchParams(data)
   })
-  .then(r => r.text())
-  .then(txt => alert(txt))
+  .then(response => response.text())
+  .then(result => alert(result))
   .catch(err => alert("Chyba: " + err));
 }
 
-function zapsatDochazku(typ) {
+function zapsatDochazku(typ){
   const jmeno = sessionStorage.getItem('jmeno');
   const misto = sessionStorage.getItem('misto');
-
   const data = { jmeno, misto, typ, action:"dochazka" };
 
-  fetch(scriptURL, {
+  fetch(scriptURL,{
     method:'POST',
     headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:new URLSearchParams(data)
+    body: new URLSearchParams(data)
   })
-  .then(r => r.text())
-  .then(txt => alert(txt))
+  .then(response => response.text())
+  .then(result => alert(result))
   .catch(err => alert("Chyba: " + err));
 }
 </script>
