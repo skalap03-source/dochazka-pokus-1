@@ -1,207 +1,79 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-<meta charset="utf-8" />
-<title>Docházkový panel</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<style>
-  html,body{height:100%;margin:0;font-family:Arial, Helvetica, sans-serif;background:#f0f2f5;}
-  /* centrální modal */
-  .modal-wrap{height:100%;display:flex;align-items:center;justify-content:center;}
-  .modal{
-    width:400px; max-width:92%;
-    background:#fff;border-radius:12px;padding:26px 22px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.15); position:relative;
-    text-align:center;
-  }
-  h2{margin:0 0 14px;font-weight:700;font-size:20px}
-  label{display:block;text-align:left;margin-bottom:8px;font-weight:700;color:#000}
-  input, select{width:100%;padding:10px;margin-bottom:12px;font-size:15px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
-  .row{display:flex;gap:12px;justify-content:center;margin:12px 0}
-  button{border:none;border-radius:8px;padding:12px 18px;font-weight:700;font-size:16px;cursor:pointer}
-  .btn-large{min-width:140px;height:52px}
-  .btn-checkin{background:#4CAF50;color:#000}   /* zelené */
-  .btn-checkout{background:#F44336;color:#000}  /* červené  */
-  .btn-interval{background:#d9d9d9;color:#000}  /* šedé */
-  .btn-primary{background:#2b7cff;color:#fff}
-  #logoutBtn{position:absolute;right:14px;top:12px;background:transparent;color:#111;font-weight:700;border-radius:6px;padding:6px 8px}
-  #uzivatel{font-weight:700;margin-bottom:10px}
-  /* skrytí panelu/přihlášení */
-  #panel{display:none}
-  /* mobil: menší tlačítka */
-  @media (max-width:420px){
-    .btn-large{min-width:120px;height:48px;font-size:15px}
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Docházkový panel</title>
+  <style>
+    body { font-family: sans-serif; margin:0; height:100vh; display:flex; justify-content:center; align-items:center; background:#f5f5f5; }
+    #panel, #login { background:white; padding:30px; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.2); text-align:center; }
+    button { padding:15px 25px; font-size:16px; margin:10px; font-weight:bold; color:#000; border:none; border-radius:8px; cursor:pointer; }
+    #prichod { background:#4CAF50; color:white; }
+    #odchod { background:#F44336; color:white; }
+    #kropeni, #hrabani { background:#2196F3; color:white; }
+    #odhlasit { background:#555; color:white; position:absolute; top:20px; right:20px; padding:10px; font-size:14px; border-radius:50px; }
+    select, input { font-size:16px; padding:8px; margin:5px 0; width:100%; }
+  </style>
 </head>
 <body>
 
-<div class="modal-wrap">
-  <div class="modal" role="dialog" aria-modal="true">
+<!-- Přihlášení -->
+<div id="login">
+  <h2>Přihlášení</h2>
+  <input type="text" id="jmeno" placeholder="Jméno a příjmení">
+  <select id="misto">
+    <option value="Brandýs">Brandýs</option>
+    <option value="Dejvice">Dejvice</option>
+    <option value="Harfa">Harfa</option>
+    <option value="Máj">Máj</option>
+    <option value="Nábřeží">Nábřeží</option>
+    <option value="Ořechovka">Ořechovka</option>
+    <option value="Pražačka">Pražačka</option>
+    <option value="Příbram">Příbram</option>
+    <option value="Sofijské náměstí">Sofijské náměstí</option>
+    <option value="Uhříněves">Uhříněves</option>
+    <option value="Vypich">Vypich</option>
+    <option value="Vyšehrad">Vyšehrad</option>
+  </select>
+  <button onclick="prihlasit()">Pokračovat</button>
+</div>
 
-    <!-- odhlásit (zůstane skryto dokud není přihlášeno) -->
-    <button id="logoutBtn" style="display:none" onclick="odhlasit()">Odhlásit ⎋</button>
-
-    <!-- Přihlášení (zobrazeno při startu) -->
-    <div id="login">
-      <h2>Přihlášení</h2>
-      <label for="jmenoInput">Jméno a příjmení</label>
-      <input id="jmenoInput" type="text" placeholder="Např. Pavel Skála" autocomplete="name" />
-      <label for="mistoSelect">Místo</label>
-      <select id="mistoSelect" aria-label="Místo">
-        <option>Brandýs</option>
-        <option>Dejvice</option>
-        <option>Harfa</option>
-        <option>Máj</option>
-        <option>Nábřeží</option>
-        <option>Ořechovka</option>
-        <option>Pražačka</option>
-        <option>Příbram</option>
-        <option>Sofijské náměstí</option>
-        <option>Uhříněves</option>
-        <option>Vypich</option>
-        <option>Vyšehrad</option>
-      </select>
-      <div style="text-align:center;margin-top:6px;">
-        <button class="btn-primary btn-large" onclick="prihlasit()">Pokračovat</button>
-      </div>
-    </div>
-
-    <!-- Panel po přihlášení -->
-    <div id="panel" aria-hidden="true">
-      <h2>Docházkový panel</h2>
-      <div id="uzivatel"></div>
-
-      <div class="row">
-        <button class="btn-checkin btn-large" onclick="zapsatDochazku('Příchod')">Příchod</button>
-        <button class="btn-checkout btn-large" onclick="zapsatDochazku('Odchod')">Odchod</button>
-      </div>
-
-      <div class="row">
-        <button class="btn-interval btn-large" onclick="zapsatInterval('Kropení')">Kropení</button>
-        <button class="btn-interval btn-large" onclick="zapsatInterval('Hrabaní')">Hrabaní</button>
-      </div>
-    </div>
-
+<!-- Panel -->
+<div id="panel" class="hidden">
+  <button id="odhlasit" onclick="odhlasit()">Odhlásit ⨯</button>
+  <h2 id="uzivatel"></h2>
+  <div>
+    <button id="prichod" onclick="zapsatDochazku('Příchod')">Příchod</button>
+    <button id="odchod" onclick="zapsatDochazku('Odchod')">Odchod</button>
+  </div>
+  <div>
+    <button id="kropeni" onclick="zapsatInterval('Kropení')">Kropení</button>
+    <button id="hrabani" onclick="zapsatInterval('Hrabání')">Hrabání</button>
   </div>
 </div>
 
 <script>
-/* Uprav na svůj nasazený Web App URL */
-const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
+const scriptURL = "TVÁ_URL_APPS_SCRIPT"; // sem vlož nasazený URL Web App
 
-/* Klientská normalizace jména pro bezpečný sheet-id:
-   - trim, remove diacritics (NFD), toLowerCase
-   - remove punctuation and "dangerous" chars
-   - collapse spaces
-*/
-function makeSafeName(raw) {
-  if (!raw) return "neznamy";
-  // remove control chars
-  let s = raw.toString().replace(/[\x00-\x1F\x7F]/g, " ").trim();
-  // normalize (decompose) and remove diacritics
-  s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  // to lower
-  s = s.toLowerCase();
-  // remove dangerous punctuation characters: ,.;:`'"<>\/\\\[\]\{\}\|\(\)@#%&=*+?^$~` and similar
-  s = s.replace(/[,\.;:`'"<>\/\\\[\]\{\}\|\(\)@#%&=\*\+\?\^\$\~`<>!–—–]/g, " ");
-  // remove leading + - = @ (common formula injection start) anywhere at start of token
-  s = s.replace(/(^| )[\+\-\=@]+/g, " ");
-  // keep only letters, numbers, spaces and dash/underscore
-  s = s.replace(/[^a-z0-9\s\-\_]/g, " ");
-  // collapse multiple spaces to one
-  s = s.replace(/\s+/g, " ").trim();
-  if (s.length === 0) return "neznamy";
-  return s.slice(0, 80); // limit length
-}
-
-/* display-normalize: First letter capitalized each word, keep diacritics for display */
-function niceDisplayName(raw) {
-  if (!raw) return "Neznámý";
-  return raw.toString().trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
-}
-
-/* přihlášení: uložíme do session storage jmenoDisplay a jmenoNorm */
 function prihlasit() {
-  const raw = document.getElementById('jmenoInput').value || "";
-  if (!raw.trim()) { alert("Zadej jméno a příjmení"); return; }
-  const misto = document.getElementById('mistoSelect').value || "";
-
-  const jmenoDisplay = niceDisplayName(raw);
-  const jmenoNorm = makeSafeName(raw);
-
-  sessionStorage.setItem('jmenoDisplay', jmenoDisplay);
-  sessionStorage.setItem('jmenoNorm', jmenoNorm);
-  sessionStorage.setItem('misto', misto);
-
-  // přepnout UI
-  document.getElementById('login').style.display = "none";
-  document.getElementById('panel').style.display = "block";
-  document.getElementById('logoutBtn').style.display = "inline-block";
-  document.getElementById('uzivatel').innerText = `${jmenoDisplay} — ${misto}`;
+  let jmeno = document.getElementById('jmeno').value.trim();
+  let misto = document.getElementById('misto').value;
+  if(!jmeno){ alert("Zadejte jméno"); return; }
+  sessionStorage.setItem("jmeno", jmeno);
+  sessionStorage.setItem("misto", misto);
+  document.getElementById('login').classList.add("hidden");
+  document.getElementById('panel').classList.remove("hidden");
+  document.getElementById('uzivatel').innerText = `${jmeno} (${misto})`;
 }
 
-/* odhlásit */
-function odhlasit() {
-  sessionStorage.removeItem('jmenoDisplay');
-  sessionStorage.removeItem('jmenoNorm');
-  sessionStorage.removeItem('misto');
-  document.getElementById('panel').style.display = "none";
-  document.getElementById('login').style.display = "block";
-  document.getElementById('logoutBtn').style.display = "none";
+function odhlasit(){
+  sessionStorage.clear();
+  document.getElementById('panel').classList.add("hidden");
+  document.getElementById('login').classList.remove("hidden");
 }
 
-/* POST helper: pošle jmenoDisplay + jmenoNorm; server by měl preferovat jmenoNorm pro listy */
-function postToScript(payload) {
-  return fetch(scriptURL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(payload)
-  }).then(r => r.text());
-}
-
-/* interval (kropení/hrabání) */
-function zapsatInterval(typ) {
-  const jmenoDisplay = sessionStorage.getItem('jmenoDisplay') || "";
-  const jmenoNorm = sessionStorage.getItem('jmenoNorm') || makeSafeName(jmenoDisplay);
-  const misto = sessionStorage.getItem('misto') || "";
-
-  const cas = new Date().toLocaleString('cs-CZ');
-  const payload = { jmeno: jmenoDisplay, jmenoNorm: jmenoNorm, misto: misto, typ: typ, cas: cas, action: 'interval' };
-
-  postToScript(payload)
-    .then(txt => alert(txt))
-    .catch(err => alert("Chyba: " + err));
-}
-
-/* docházka (příchod/odchod) */
-function zapsatDochazku(typ) {
-  const jmenoDisplay = sessionStorage.getItem('jmenoDisplay') || "";
-  const jmenoNorm = sessionStorage.getItem('jmenoNorm') || makeSafeName(jmenoDisplay);
-  const misto = sessionStorage.getItem('misto') || "";
-
-  const payload = { jmeno: jmenoDisplay, jmenoNorm: jmenoNorm, misto: misto, typ: typ, action: 'dochazka' };
-
-  postToScript(payload)
-    .then(txt => alert(txt))
-    .catch(err => alert("Chyba: " + err));
-}
-
-/* pokud už je uživatel v session (např. obnovil stránku), přepnout UI */
-(function initFromSession(){
-  const jmenoDisplay = sessionStorage.getItem('jmenoDisplay');
-  const misto = sessionStorage.getItem('misto');
-  if (jmenoDisplay && misto) {
-    document.getElementById('login').style.display = "none";
-    document.getElementById('panel').style.display = "block";
-    document.getElementById('logoutBtn').style.display = "inline-block";
-    document.getElementById('uzivatel').innerText = `${jmenoDisplay} — ${misto}`;
-  } else {
-    document.getElementById('login').style.display = "block";
-    document.getElementById('panel').style.display = "none";
-    document.getElementById('logoutBtn').style.display = "none";
-  }
-})();
-</script>
-</body>
-</html>
+function zapsatInterval(typ){
+  const jmeno = sessionStorage.getItem("jmeno");
+  const misto = sessionStorage.getItem("misto");
+  const data = { jmeno, misto, typ, cas: new Date(), action:"interval" };
+  fetch(scriptURL,{ method:"POST", body: new URLSearchParams(data) })
+  .then(r=>r.text()).then(alert).
