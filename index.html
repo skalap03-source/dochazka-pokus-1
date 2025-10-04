@@ -48,30 +48,19 @@
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbw1cUntkUotJxtIDpiENt8crod3lAgdB5BV8GmZF9FdKMg_3Ph4I4pgPR2TLmmOSccSoA/exec"; // URL tvého Apps Script
-
-// Funkce pro normalizaci jména: odstraní diakritiku a převede na malá písmena
-function normalizeName(name) {
-  return name
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
+const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
 
 function prihlasit() {
-  let jmenoRaw = document.getElementById('jmeno').value;
-  if (!jmenoRaw.trim()) { alert('Zadej jméno'); return; }
-
-  const jmeno = normalizeName(jmenoRaw); // normalizované jméno
+  const jmeno = document.getElementById('jmeno').value.trim();
   const misto = document.getElementById('misto').value;
+  if (!jmeno) { alert('Zadej jméno'); return; }
 
   sessionStorage.setItem('jmeno', jmeno);
   sessionStorage.setItem('misto', misto);
 
   document.getElementById('login').classList.add('hidden');
   document.getElementById('panel').classList.remove('hidden');
-  document.getElementById('uzivatel').innerText = `${jmenoRaw} (${misto})`; // zobrazíme originální jméno
+  document.getElementById('uzivatel').innerText = `${jmeno} (${misto})`;
 }
 
 function odhlasit() {
@@ -80,41 +69,37 @@ function odhlasit() {
   document.getElementById('login').classList.remove('hidden');
 }
 
-function zapsatInterval(typ){
+function zapsatInterval(typ) {
   const jmeno = sessionStorage.getItem('jmeno');
   const misto = sessionStorage.getItem('misto');
   const cas = new Date().toLocaleString('cs-CZ');
-  
+
   const data = { jmeno, misto, typ, cas, action: "interval" };
 
-  fetch(scriptURL,{
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+  fetch(scriptURL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(data)
-  })
-  .then(response => response.text())
-  .then(result => alert(result))
-  .catch(err => alert("Chyba: " + err));
+  }).then(r => r.text())
+    .then(txt => alert(txt))
+    .catch(err => alert("Chyba: " + err));
 }
 
-function zapsatDochazku(typ){
+function zapsatDochazku(typ) {
   const jmeno = sessionStorage.getItem('jmeno');
   const misto = sessionStorage.getItem('misto');
 
-  const data = { jmeno, misto, typ, action:"dochazka" };
+  const data = { jmeno, misto, typ, action: "dochazka" };
 
-  fetch(scriptURL,{
-    method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+  fetch(scriptURL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(data)
-  })
-  .then(response => response.text())
-  .then(result => alert(result))
-  .catch(err => alert("Chyba: " + err));
+  }).then(r => r.text())
+    .then(txt => alert(txt))
+    .catch(err => alert("Chyba: " + err));
 }
 </script>
 
 </body>
 </html>
-
-
