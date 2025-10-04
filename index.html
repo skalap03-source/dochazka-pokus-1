@@ -14,8 +14,8 @@
 <!-- Přihlášení -->
 <div id="login">
   <h2>Přihlášení</h2>
-  <label>Jméno:<br>
-    <input type="text" id="jmeno">
+  <label>Jméno a příjmení:<br>
+    <input type="text" id="jmeno" placeholder="Např. Jan Novák">
   </label><br><br>
   <label>Místo:<br>
     <select id="misto">
@@ -48,15 +48,19 @@
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbzdp5cuvaCrnGsk4_A_PaHHtNQAnTCi4cw8LtcJhjZN0LBshw2iznTknJqkIyeu7rRRBg/exec"; // URL tvého Apps Script
-//https://script.google.com/macros/s/AKfycbxfr0jpXukyg_fg0mQdcXq1_Mfy0txs4B9B2GsKPHb8gLbM5FNn7Pl4apXoHzTwOyb2MQ/exec
-  //https://script.google.com/macros/s/AKfycbzdp5cuvaCrnGsk4_A_PaHHtNQAnTCi4cw8LtcJhjZN0LBshw2iznTknJqkIyeu7rRRBg/exec pise i prijmeni
+const scriptURL = "https://script.google.com/macros/s/AKfycbyx3bChpBYhRVhiBt9zt6BYvZgb2QL9oGu1RW9jjy4aB2jWoUNglfLw_krzEr49v8tX/exec";
+
+// Přihlášení a normalizace jména
 function prihlasit() {
   const jmeno = document.getElementById('jmeno').value.trim();
   const misto = document.getElementById('misto').value;
-  if (!jmeno) { alert('Zadej jméno'); return; }
+  if (!jmeno) { alert('Zadej jméno a příjmení'); return; }
 
-  sessionStorage.setItem('jmeno', jmeno);
+  // Normalizace jména pro jednotný zápis do listu
+  const jmenoNorm = jmeno.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  sessionStorage.setItem('jmeno', jmeno);        // originální pro zobrazení a zápis do tabulky
+  sessionStorage.setItem('jmenoNorm', jmenoNorm); // normalizované pro volbu listu
   sessionStorage.setItem('misto', misto);
 
   document.getElementById('login').classList.add('hidden');
@@ -64,18 +68,21 @@ function prihlasit() {
   document.getElementById('uzivatel').innerText = `${jmeno} (${misto})`;
 }
 
+// Odhlášení
 function odhlasit() {
   sessionStorage.clear();
   document.getElementById('panel').classList.add('hidden');
   document.getElementById('login').classList.remove('hidden');
 }
 
+// Zápis Kropení / Hrabaní podle místa
 function zapsatInterval(typ){
   const jmeno = sessionStorage.getItem('jmeno');
+  const jmenoNorm = sessionStorage.getItem('jmenoNorm');
   const misto = sessionStorage.getItem('misto');
   const cas = new Date().toLocaleString('cs-CZ');
-  
-  const data = { jmeno, misto, typ, cas, action: "interval" };
+
+  const data = { jmeno, jmenoNorm, misto, typ, cas, action: "interval" };
 
   fetch(scriptURL,{
     method:'POST',
@@ -87,11 +94,13 @@ function zapsatInterval(typ){
   .catch(err => alert("Chyba: " + err));
 }
 
+// Zápis Příchod / Odchod podle jména
 function zapsatDochazku(typ){
   const jmeno = sessionStorage.getItem('jmeno');
+  const jmenoNorm = sessionStorage.getItem('jmenoNorm');
   const misto = sessionStorage.getItem('misto');
 
-  const data = { jmeno, misto, typ, action:"dochazka" };
+  const data = { jmeno, jmenoNorm, misto, typ, action:"dochazka" };
 
   fetch(scriptURL,{
     method:'POST',
@@ -106,5 +115,3 @@ function zapsatDochazku(typ){
 
 </body>
 </html>
-
-
