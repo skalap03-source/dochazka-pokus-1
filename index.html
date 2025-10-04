@@ -48,8 +48,8 @@
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbyx3bChpBYhRVhiBt9zt6BYvZgb2QL9oGu1RW9jjy4aB2jWoUNglfLw_krzEr49v8tX/exec"; // Sem vlož URL svého nasazeného Apps Script
-//https://script.google.com/macros/s/AKfycbyx3bChpBYhRVhiBt9zt6BYvZgb2QL9oGu1RW9jjy4aB2jWoUNglfLw_krzEr49v8tX/exec
+const scriptURL = "https://script.google.com/macros/s/AKfycbyx3bChpBYhRVhiBt9zt6BYvZgb2QL9oGu1RW9jjy4aB2jWoUNglfLw_krzEr49v8tX/exec"; // URL tvého Apps Script
+
 function prihlasit() {
   const jmeno = document.getElementById('jmeno').value.trim();
   const misto = document.getElementById('misto').value;
@@ -78,11 +78,12 @@ function zapsatInterval(typ){
 
   fetch(scriptURL,{
     method:'POST',
-    mode:'no-cors',
     headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body: new URLSearchParams(data)
-  }).then(()=>alert(`${typ} zapsáno: ${cas}`))
-  .catch(err=>alert(err));
+  })
+  .then(response => response.text())
+  .then(result => alert(result))
+  .catch(err => alert("Chyba: " + err));
 }
 
 function zapsatDochazku(typ){
@@ -93,21 +94,14 @@ function zapsatDochazku(typ){
 
   fetch(scriptURL,{
     method:'POST',
-    mode:'no-cors',
     headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body: new URLSearchParams(data)
-  }).then(()=>alert(`${typ} zapsáno`))
-  .catch(err=>alert(err));
+  })
+  .then(response => response.text())
+  .then(result => alert(result))
+  .catch(err => alert("Chyba: " + err));
 }
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
