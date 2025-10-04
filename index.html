@@ -83,14 +83,16 @@
 <script>
 const scriptURL = "https://script.google.com/macros/s/AKfycbyt49bf2EwJmwcsbyN6Q6H3QwsbmACPdFhSNU_z25ZVSdI0W7ysSHPRrBXjtFFqGqx1NQ/exec";
 
+// Normalizace jména: odstranění diakritiky, malá písmena, bezpečné znaky
 function makeSafeName(raw){
   if(!raw) return "neznamy";
-  let s = raw.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  let s = raw.toString().normalize("NFD").replace(/[\u0300-\u036f]/g,""); // remove diacritics
   s = s.toLowerCase().replace(/[^a-z0-9\s\-_]/g," ");
   s = s.replace(/\s+/g," ").trim();
   return s||"neznamy";
 }
 
+// Přihlášení
 function prihlasit(){
   const raw = document.getElementById('jmenoInput').value || "";
   if(!raw.trim()){ alert("Zadej jméno a příjmení"); return; }
@@ -101,12 +103,16 @@ function prihlasit(){
   sessionStorage.setItem('jmenoNorm', jmenoNorm);
   sessionStorage.setItem('misto', misto);
 
+  // zobrazit panel a logout
   document.getElementById('login').style.display = "none";
   document.getElementById('panel').style.display = "block";
   document.getElementById('logoutBtn').style.display = "inline-block";
+
+  // **zobrazit normalizované jméno**
   document.getElementById('uzivatel').innerText = `${jmenoNorm} — ${misto}`;
 }
 
+// Odhlášení
 function odhlasit(){
   sessionStorage.clear();
   document.getElementById('panel').style.display = "none";
@@ -114,6 +120,7 @@ function odhlasit(){
   document.getElementById('logoutBtn').style.display = "none";
 }
 
+// POST helper
 function postToScript(payload){
   return fetch(scriptURL,{
     method:'POST',
@@ -122,30 +129,33 @@ function postToScript(payload){
   }).then(r=>r.text());
 }
 
+// Interval (Kropení/Hrabaní)
 function zapsatInterval(typ){
-  const jmenoNorm = sessionStorage.getItem('jmenoNorm')||"neznamy";
-  const misto = sessionStorage.getItem('misto')||"";
+  const jmenoNorm = sessionStorage.getItem('jmenoNorm') || "neznamy";
+  const misto = sessionStorage.getItem('misto') || "";
   const cas = new Date().toLocaleString('cs-CZ');
-  postToScript({jmeno:jmenoNorm,jmenoNorm,jmenoNorm,misto,typ,cas,action:'interval'})
+  postToScript({jmeno:jmenoNorm,jmenoNorm,misto,typ,cas,action:'interval'})
     .then(txt=>alert(txt))
     .catch(err=>alert("Chyba: "+err));
 }
 
+// Docházka (Příchod/Odchod)
 function zapsatDochazku(typ){
-  const jmenoNorm = sessionStorage.getItem('jmenoNorm')||"neznamy";
-  const misto = sessionStorage.getItem('misto')||"";
+  const jmenoNorm = sessionStorage.getItem('jmenoNorm') || "neznamy";
+  const misto = sessionStorage.getItem('misto') || "";
   postToScript({jmeno:jmenoNorm,jmenoNorm,misto,typ,action:'dochazka'})
     .then(txt=>alert(txt))
     .catch(err=>alert("Chyba: "+err));
 }
 
-(function initSession(){
+// Init z session
+(function initFromSession(){
   const jmenoNorm = sessionStorage.getItem('jmenoNorm');
   const misto = sessionStorage.getItem('misto');
   if(jmenoNorm && misto){
-    document.getElementById('login').style.display="none";
-    document.getElementById('panel').style.display="block";
-    document.getElementById('logoutBtn').style.display="inline-block";
+    document.getElementById('login').style.display = "none";
+    document.getElementById('panel').style.display = "block";
+    document.getElementById('logoutBtn').style.display = "inline-block";
     document.getElementById('uzivatel').innerText = `${jmenoNorm} — ${misto}`;
   }
 })();
